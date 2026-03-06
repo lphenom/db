@@ -143,6 +143,11 @@ final class FfiMySqlConnection implements ConnectionInterface
                 0,
                 $e,
             );
+        } catch (\Error $e) {
+            // FFI\Exception extends \Error (not \Exception) on PHP 8.2+
+            throw new ConnectionException(
+                'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
+            );
         }
 
         $this->connect();
