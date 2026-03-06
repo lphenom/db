@@ -5,4 +5,12 @@ parameters:
         - tests
     checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
-
+    ignoreErrors:
+        # PHPStan cannot resolve dynamic FFI method calls (mysql_init, mysql_query, etc.)
+        # These are valid at runtime when libmysqlclient is loaded via FFI::cdef().
+        -
+            message: '#Call to an undefined method FFI::#'
+            path: src/Driver/FfiMySqlConnection.php
+        -
+            message: '#Call to an undefined method FFI::#'
+            path: src/Driver/FfiMySqlResult.php

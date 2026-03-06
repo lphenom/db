@@ -20,7 +20,8 @@
     },
     "suggest": {
         "ext-pdo_sqlite": "Required for running unit tests with SQLite in-memory database",
-        "ext-pdo_mysql": "Required for PdoMySqlConnection driver"
+        "ext-pdo_mysql": "Required for PdoMySqlConnection driver",
+        "ext-ffi": "Required for FfiMySqlConnection driver (KPHP compiled mode)"
     },
     "autoload": {
         "psr-4": {

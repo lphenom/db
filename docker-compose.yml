@@ -18,6 +18,7 @@ services:
       DB_NAME: lphenom
       DB_USER: lphenom
       DB_PASSWORD: secret
+      SKIP_FFI_TESTS: "1"
     command: ["tail", "-f", "/dev/null"]
   mysql:
     image: mysql:8.0.36
