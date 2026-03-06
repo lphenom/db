@@ -16,8 +16,11 @@
     "require-dev": {
         "phpunit/phpunit": "^10.5",
         "phpstan/phpstan": "^1.10",
-        "friendsofphp/php-cs-fixer": "^3.40",
-        "ext-pdo_sqlite": "*"
+        "friendsofphp/php-cs-fixer": "^3.40"
+    },
+    "suggest": {
+        "ext-pdo_sqlite": "Required for running unit tests with SQLite in-memory database",
+        "ext-pdo_mysql": "Required for PdoMySqlConnection driver"
     },
     "autoload": {
         "psr-4": {
@@ -36,4 +39,5 @@
     "minimum-stability": "stable",
     "prefer-stable": true
 }
+
 

@@ -1,8 +1,13 @@
-.PHONY: up down test lint phpstan shell
+.PHONY: up down build test lint lint-fix phpstan shell composer-install
 
-## Start Docker environment
+## Build Docker images
+build:
+	docker compose build
+
+## Start Docker environment (build if needed)
 up:
 	docker compose up -d --build
+	docker compose exec app composer install --no-interaction --prefer-dist
 
 ## Stop Docker environment
 down:
@@ -10,25 +15,24 @@ down:
 
 ## Run PHPUnit tests inside container
 test:
-	docker compose run --rm app vendor/bin/phpunit --testdox
+	docker compose exec app vendor/bin/phpunit --testdox
 
 ## Run php-cs-fixer check (dry-run) inside container
 lint:
-	docker compose run --rm app vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php
+	docker compose exec app vendor/bin/php-cs-fixer fix --dry-run --diff --config=.php-cs-fixer.php
 
 ## Auto-fix code style inside container
 lint-fix:
-	docker compose run --rm app vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
+	docker compose exec app vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.php
 
 ## Run PHPStan analysis inside container
 phpstan:
-	docker compose run --rm app vendor/bin/phpstan analyse --no-progress
+	docker compose exec app vendor/bin/phpstan analyse --no-progress
 
 ## Open shell inside app container
 shell:
-	docker compose run --rm app bash
+	docker compose exec app bash
 
 ## Install composer dependencies inside container
 composer-install:
-	docker compose run --rm app composer install --no-interaction --prefer-dist
-
+	docker compose exec app composer install --no-interaction --prefer-dist
