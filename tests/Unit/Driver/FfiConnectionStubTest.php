@@ -45,4 +45,3 @@ final class FfiConnectionStubTest extends TestCase
         });
     }
 }
-

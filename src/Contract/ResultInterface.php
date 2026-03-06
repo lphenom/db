@@ -25,4 +25,3 @@ interface ResultInterface
      */
     public function fetchAll(): array;
 }
-

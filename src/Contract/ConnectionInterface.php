@@ -31,4 +31,3 @@ interface ConnectionInterface
      */
     public function transaction(callable $callback): mixed;
 }
-

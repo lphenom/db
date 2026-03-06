@@ -62,4 +62,3 @@ final class ParamBinder
         return new Param((string) $value, PDO::PARAM_STR);
     }
 }
-

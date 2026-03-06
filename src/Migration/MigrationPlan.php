@@ -34,4 +34,3 @@ final class MigrationPlan
         return $this->appliedAt !== null;
     }
 }
-

@@ -41,4 +41,3 @@ final class PdoResult implements ResultInterface
         return $rows;
     }
 }
-

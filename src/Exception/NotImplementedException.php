@@ -12,4 +12,3 @@ use LogicException;
 final class NotImplementedException extends LogicException
 {
 }
-

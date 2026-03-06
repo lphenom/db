@@ -29,4 +29,3 @@ interface MigrationInterface
      */
     public function getVersion(): string;
 }
-

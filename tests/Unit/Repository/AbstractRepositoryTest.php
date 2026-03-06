@@ -150,4 +150,3 @@ final class AbstractRepositoryTest extends TestCase
         self::assertFalse($user->active);
     }
 }
-

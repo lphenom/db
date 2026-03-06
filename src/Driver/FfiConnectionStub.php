@@ -44,4 +44,3 @@ final class FfiConnectionStub implements ConnectionInterface
         throw new NotImplementedException('FFI driver is not implemented. Use PdoMySqlConnection instead.');
     }
 }
-

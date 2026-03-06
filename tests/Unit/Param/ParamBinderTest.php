@@ -85,4 +85,3 @@ final class ParamBinderTest extends TestCase
         self::assertSame(PDO::PARAM_STR, $param->type);
     }
 }
-

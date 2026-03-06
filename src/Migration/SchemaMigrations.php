@@ -87,4 +87,3 @@ final class SchemaMigrations
         return $versions;
     }
 }
-

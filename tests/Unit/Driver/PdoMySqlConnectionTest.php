@@ -128,4 +128,3 @@ final class PdoMySqlConnectionTest extends TestCase
         $this->conn->query('INVALID SQL STATEMENT');
     }
 }
-

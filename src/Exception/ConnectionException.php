@@ -12,4 +12,3 @@ use RuntimeException;
 final class ConnectionException extends RuntimeException
 {
 }
-

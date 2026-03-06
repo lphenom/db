@@ -88,4 +88,3 @@ final class SchemaMigrationsTest extends TestCase
         self::assertStringContainsString('schema_migrations', $sql);
     }
 }
-

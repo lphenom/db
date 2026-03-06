@@ -79,4 +79,3 @@ abstract class AbstractRepository
         return $this->connection->query($sql, $params);
     }
 }
-
