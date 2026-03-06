@@ -1,0 +1,28 @@
+# Dependencies
+/vendor/
+# Composer lock (library — not committed)
+composer.lock
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+Thumbs.db
+# PHPUnit cache/coverage
+.phpunit.cache/
+.phpunit.result.cache
+coverage.xml
+coverage/
+# php-cs-fixer cache
+.php-cs-fixer.cache
+.php_cs.cache
+# PHPStan cache
+.phpstan/
+# Environment
+.env
+.env.local
+.env.*.local
+# Build artifacts
+*.phar
