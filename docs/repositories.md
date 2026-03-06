@@ -151,3 +151,33 @@ $conn->transaction(function (ConnectionInterface $conn) use ($userRepo, $orderRe
 - `fromRow()` must use explicit property assignments — no array_map magic
 - All type casts must be explicit: `(int)`, `(string)`, `(bool)`, `(float)`
 
+---
+
+## Driver Selection
+
+Repositories depend only on `ConnectionInterface`. The concrete driver is chosen **once**
+at application bootstrap via `ConnectionFactory`:
+
+```php
+use LPhenom\Db\Driver\ConnectionFactory;
+
+$conn = ConnectionFactory::create([
+    'driver'   => getenv('DB_DRIVER') ?: 'pdo_mysql',  // 'pdo_mysql' | 'ffi_mysql'
+    'host'     => getenv('DB_HOST')   ?: '127.0.0.1',
+    'port'     => (int) (getenv('DB_PORT') ?: 3306),
+    'dbname'   => getenv('DB_NAME')   ?: 'myapp',
+    'user'     => getenv('DB_USER')   ?: 'root',
+    'password' => getenv('DB_PASSWORD') ?: '',
+]);
+
+// Same repository works with both drivers:
+$repo = new UserRepository($conn);
+```
+
+| Driver | Environment | Requires |
+|--------|-------------|----------|
+| `pdo_mysql` | Shared hosting / standard PHP | `ext-pdo_mysql` |
+| `ffi_mysql`  | KPHP compiled binary | `ext-ffi` + `libmysqlclient` |
+
+See [drivers.md](./drivers.md) for full driver documentation.
+
