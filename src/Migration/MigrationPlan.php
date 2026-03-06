@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Migration;
 
+use DateTimeImmutable;
+
 /**
  * Immutable DTO representing a migration execution plan entry.
  *
@@ -14,14 +16,14 @@ final class MigrationPlan
     public function __construct(
         public readonly string $version,
         public readonly string $name,
-        public readonly ?\DateTimeImmutable $appliedAt = null,
+        public readonly ?DateTimeImmutable $appliedAt = null,
     ) {
     }
 
     /**
      * Return a new instance marked as applied at the given time.
      */
-    public function withAppliedAt(\DateTimeImmutable $appliedAt): self
+    public function withAppliedAt(DateTimeImmutable $appliedAt): self
     {
         return new self($this->version, $this->name, $appliedAt);
     }

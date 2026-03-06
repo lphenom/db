@@ -87,6 +87,12 @@ final class ConnectionFactory
      */
     private static function createFfi(array $config): FfiMySqlConnection
     {
+        if (!extension_loaded('ffi')) {
+            throw new ConnectionException(
+                'ext-ffi is not loaded. FfiMySqlConnection requires the FFI PHP extension.',
+            );
+        }
+
         $host     = isset($config['host']) ? (string) $config['host'] : '127.0.0.1';
         $port     = isset($config['port']) ? (int)    $config['port'] : 3306;
         $dbname   = isset($config['dbname']) ? (string) $config['dbname'] : '';

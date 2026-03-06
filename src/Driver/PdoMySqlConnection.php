@@ -11,7 +11,6 @@ use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\Param;
 use PDO;
 use PDOException;
-use Throwable;
 
 /**
  * PDO MySQL database connection.
@@ -86,9 +85,9 @@ final class PdoMySqlConnection implements ConnectionInterface
     }
 
     /**
-     * @throws Throwable
+     * @throws \Exception
      */
-    public function transaction(callable $callback): mixed
+    public function transaction(callable $callback): int|string|bool|float|null
     {
         $this->pdo->beginTransaction();
 
@@ -96,8 +95,9 @@ final class PdoMySqlConnection implements ConnectionInterface
             $result = $callback($this);
             $this->pdo->commit();
 
+            /** @var int|string|bool|float|null $result */
             return $result;
-        } catch (Throwable $e) {
+        } catch (\Exception $e) {
             $this->pdo->rollBack();
 
             throw $e;

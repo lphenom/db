@@ -28,6 +28,11 @@ interface ConnectionInterface
     /**
      * Run a callable inside a database transaction.
      * Commits on success, rolls back on exception.
+     *
+     * Returns whatever the callable returns (null if void).
+     * KPHP note: mixed return is avoided — use @return annotation for generics.
+     *
+     * @return int|string|bool|float|null
      */
-    public function transaction(callable $callback): mixed;
+    public function transaction(callable $callback): int|string|bool|float|null;
 }

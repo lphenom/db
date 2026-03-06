@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Migration;
 
+use DateTimeImmutable;
 use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Param\ParamBinder;
 
@@ -52,7 +53,7 @@ final class SchemaMigrations
             [
                 ':version'    => ParamBinder::str($version),
                 ':name'       => ParamBinder::str($name),
-                ':applied_at' => ParamBinder::str((new \DateTimeImmutable())->format('Y-m-d H:i:s')),
+                ':applied_at' => ParamBinder::str((new DateTimeImmutable())->format('Y-m-d H:i:s')),
             ],
         );
     }

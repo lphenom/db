@@ -10,7 +10,7 @@ use LPhenom\Db\Contract\ResultInterface;
 use LPhenom\Db\Exception\ConnectionException;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\Param;
-use Throwable;
+use LPhenom\Db\Param\ParamBinder;
 
 /**
  * KPHP FFI MySQL driver.
@@ -137,7 +137,7 @@ final class FfiMySqlConnection implements ConnectionInterface
     ) {
         try {
             $this->ffi = FFI::cdef(self::C_HEADER, $libPath);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             throw new ConnectionException(
                 'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
                 0,
@@ -225,9 +225,9 @@ final class FfiMySqlConnection implements ConnectionInterface
     }
 
     /**
-     * @throws Throwable
+     * @throws \Exception
      */
-    public function transaction(callable $callback): mixed
+    public function transaction(callable $callback): int|string|bool|float|null
     {
         $this->ffi->mysql_autocommit($this->mysql, 0);
 
@@ -235,8 +235,9 @@ final class FfiMySqlConnection implements ConnectionInterface
             $result = $callback($this);
             $this->ffi->mysql_commit($this->mysql);
 
+            /** @var int|string|bool|float|null $result */
             return $result;
-        } catch (Throwable $e) {
+        } catch (\Exception $e) {
             $this->ffi->mysql_rollback($this->mysql);
 
             throw $e;
@@ -277,22 +278,19 @@ final class FfiMySqlConnection implements ConnectionInterface
 
     private function escapeSingleParam(Param $param): string
     {
-        // PDO::PARAM_NULL = 0
-        if ($param->type === 0 || $param->value === null) {
+        if ($param->type === ParamBinder::PARAM_NULL || $param->value === null) {
             return 'NULL';
         }
 
-        // PDO::PARAM_INT = 1
-        if ($param->type === 1) {
+        if ($param->type === ParamBinder::PARAM_INT) {
             return (string) (int) $param->value;
         }
 
-        // PDO::PARAM_BOOL = 5
-        if ($param->type === 5) {
+        if ($param->type === ParamBinder::PARAM_BOOL) {
             return $param->value ? '1' : '0';
         }
 
-        // PDO::PARAM_STR = 2 (also float stored as string)
+        // PARAM_STR = 2 (also float stored as string)
         $raw = (string) $param->value;
         $maxLen = strlen($raw) * 2 + 1;
 

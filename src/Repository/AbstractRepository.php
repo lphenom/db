@@ -13,6 +13,12 @@ use LPhenom\Db\Param\Param;
  *
  * Provides thin wrappers around ConnectionInterface.
  * All SQL must be written in subclasses — no ORM magic.
+ *
+ * KPHP note: `object` and `mixed` types are not supported in KPHP.
+ * Subclasses must override fromRow() and declare a concrete return type.
+ * The abstract method uses no return type hint here intentionally —
+ * override in subclasses with the concrete DTO type.
+ *
  * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).
  */
 abstract class AbstractRepository
@@ -24,6 +30,7 @@ abstract class AbstractRepository
 
     /**
      * Map a raw database row to a domain DTO.
+     * Subclasses must override and return their concrete DTO type.
      *
      * @param array<string, mixed> $row
      */
@@ -44,8 +51,8 @@ abstract class AbstractRepository
     /**
      * Execute a SELECT and return all mapped DTOs.
      *
-     * @param array<string, Param>   $params
-     * @return array<int, object>
+     * @param array<string, Param>  $params
+     * @return list<object>
      */
     protected function fetchAll(string $sql, array $params = []): array
     {

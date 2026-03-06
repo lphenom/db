@@ -39,7 +39,7 @@ final class FfiConnectionStub implements ConnectionInterface
     /**
      * @throws NotImplementedException
      */
-    public function transaction(callable $callback): mixed
+    public function transaction(callable $callback): int|string|bool|float|null
     {
         throw new NotImplementedException('FFI driver is not implemented. Use PdoMySqlConnection instead.');
     }

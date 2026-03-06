@@ -3,7 +3,6 @@ parameters:
     paths:
         - src
         - tests
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
         # PHPStan cannot resolve dynamic FFI method calls (mysql_init, mysql_query, etc.)
@@ -14,3 +13,8 @@ parameters:
         -
             message: '#Call to an undefined method FFI::#'
             path: src/Driver/FfiMySqlResult.php
+        # FFI::cdef() throws FFI\Exception (extends \Exception) when lib is missing.
+        # PHPStan does not know about FFI\Exception because ext-ffi is not always present.
+        -
+            message: '#Dead catch - Exception is never thrown in the try block#'
+            path: src/Driver/FfiMySqlConnection.php

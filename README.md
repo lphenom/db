@@ -15,19 +15,20 @@ Part of the [LPhenom](https://github.com/lphenom) PHP framework ecosystem — co
 - 🔌 `ConnectionInterface` / `ResultInterface` — clean contracts
 - 🛡 Safe parameter binding (`int`, `string`, `bool`, `null`, `float`)
 - 🗄 `PdoMySqlConnection` — PDO MySQL driver for shared hosting
-- 🧱 `FfiConnectionStub` — placeholder for KPHP FFI driver
+- ⚡ `FfiMySqlConnection` — KPHP FFI MySQL driver (libmysqlclient, compiled mode)
+- 🔀 `ConnectionFactory` — single config-driven driver selection (`pdo_mysql` | `ffi_mysql`)
 - 📁 `AbstractRepository` + DTO pattern (no ORM magic)
 - 🔄 `MigrationInterface` + `SchemaMigrations` helper
-- ✅ Full unit test coverage (SQLite in-memory)
-- 🐳 Docker dev environment (PHP 8.1, MySQL 8.0.36, Redis 7.2.4)
+- ✅ Unit tests (SQLite in-memory) + Integration tests (real MySQL)
+- 🐳 Docker dev environment (PHP 8.1-alpine, MySQL 8.0.36)
 
 ---
 
 ## Requirements
 
 - PHP >= 8.1
-- ext-pdo
-- ext-pdo_mysql (for `PdoMySqlConnection`)
+- `ext-pdo` + `ext-pdo_mysql` — for `PdoMySqlConnection` (shared hosting / standard PHP)
+- `ext-ffi` + `libmysqlclient` — for `FfiMySqlConnection` (KPHP compiled mode)
 
 ---
 
@@ -65,11 +66,12 @@ $user = $result->fetchOne();
 ```bash
 git clone git@github.com:lphenom/db.git
 cd db
-make up          # start Docker (PHP 8.1 + MySQL + Redis)
-make test        # run PHPUnit
-make lint        # run php-cs-fixer check
-make phpstan     # run PHPStan
-make down        # stop Docker
+make up                  # start Docker (PHP 8.1-alpine + MySQL 8.0.36)
+make test-unit           # run unit tests (no real DB needed)
+make test-integration    # run integration tests against MySQL
+make lint                # run php-cs-fixer check
+make phpstan             # run PHPStan
+make down                # stop Docker
 ```
 
 ---
@@ -78,6 +80,7 @@ make down        # stop Docker
 
 - [Repository Pattern Guidelines](docs/repositories.md)
 - [Migration Contracts](docs/migrations.md)
+- [Drivers & ConnectionFactory (PDO vs FFI)](docs/drivers.md)
 
 ---
 
