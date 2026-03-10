@@ -198,9 +198,42 @@ interface ConnectionInterface
     /** Execute INSERT/UPDATE/DELETE — returns affected row count */
     public function execute(string $sql, array $params = []): int;
 
-    /** Run callable in a transaction; commits on success, rolls back on exception */
-    public function transaction(callable $callback): mixed;
+    /**
+     * Run a TransactionCallbackInterface in a transaction.
+     * Commits on success, rolls back on exception.
+     *
+     * KPHP note: callable is NOT supported — use TransactionCallbackInterface.
+     */
+    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null;
 }
+```
+
+### Transactions (KPHP-compatible pattern)
+
+KPHP does not support `callable` as a parameter type. Always use `TransactionCallbackInterface`:
+
+```php
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
+
+$conn->transaction(new class ($data) implements TransactionCallbackInterface {
+    /** @var array<string, mixed> */
+    private array $data;
+
+    /** @param array<string, mixed> $data */
+    public function __construct(array $data)
+    {
+        $this->data = $data;
+    }
+
+    public function execute(ConnectionInterface $conn): int|string|bool|float|null
+    {
+        return $conn->execute(
+            'INSERT INTO users (name) VALUES (:name)',
+            [':name' => ParamBinder::str($this->data['name'])],
+        );
+    }
+});
 ```
 
 Repository code uses **only** this interface:

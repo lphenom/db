@@ -12,14 +12,21 @@ No SQL is allowed in controllers, services, or domain models.
 ```php
 abstract class AbstractRepository
 {
-    public function __construct(
-        protected readonly ConnectionInterface $connection,
-    ) {}
+    protected ConnectionInterface $connection;
 
-    abstract protected function fromRow(array $row): object;
+    public function __construct(ConnectionInterface $connection)
+    {
+        $this->connection = $connection;
+    }
 
-    protected function fetchOne(string $sql, array $params = []): ?object;
+    // KPHP note: return type is `mixed` (not `object`) — override with concrete type in subclass
+    abstract protected function fromRow(array $row): mixed;
+
+    protected function fetchOne(string $sql, array $params = []): mixed;
+
+    /** @return array<int, mixed> */
     protected function fetchAll(string $sql, array $params = []): array;
+
     protected function execute(string $sql, array $params = []): int;
     protected function query(string $sql, array $params = []): ResultInterface;
 }
@@ -30,30 +37,41 @@ abstract class AbstractRepository
 ## DTO Rules
 
 - DTOs are plain value-objects — **no business logic**.
-- All properties are `readonly`.
+- KPHP note: **no `readonly` properties**, **no constructor property promotion**.
 - DTOs have a static `fromRow(array $row): self` factory method.
 - Never inject services into DTOs.
+- All type casts must be explicit: `(int)`, `(string)`, `(bool)`, `(float)`.
 
-### Example DTO
+### Example DTO (KPHP-compatible)
 
 ```php
 final class UserDto
 {
-    public function __construct(
-        public readonly int    $id,
-        public readonly string $name,
-        public readonly string $email,
-        public readonly bool   $active,
-    ) {}
+    /** @var int */
+    public int $id;
+    /** @var string */
+    public string $name;
+    /** @var string */
+    public string $email;
+    /** @var bool */
+    public bool $active;
+
+    public function __construct(int $id, string $name, string $email, bool $active)
+    {
+        $this->id     = $id;
+        $this->name   = $name;
+        $this->email  = $email;
+        $this->active = $active;
+    }
 
     /** @param array<string, mixed> $row */
     public static function fromRow(array $row): self
     {
         return new self(
-            id:     (int)    $row['id'],
-            name:   (string) $row['name'],
-            email:  (string) $row['email'],
-            active: (bool)   $row['active'],
+            (int)    $row['id'],
+            (string) $row['name'],
+            (string) $row['email'],
+            (bool)   $row['active'],
         );
     }
 }
@@ -61,33 +79,39 @@ final class UserDto
 
 ---
 
-## Example Repository
+## Example Repository (KPHP-compatible)
 
 ```php
 final class UserRepository extends AbstractRepository
 {
-    protected function fromRow(array $row): object
+    /**
+     * @param array<string, mixed> $row
+     * @return UserDto
+     */
+    protected function fromRow(array $row): mixed
     {
         return UserDto::fromRow($row);
     }
 
     public function findById(int $id): ?UserDto
     {
-        /** @var UserDto|null */
-        return $this->fetchOne(
+        /** @var UserDto|null $result */
+        $result = $this->fetchOne(
             'SELECT * FROM users WHERE id = :id',
             [':id' => ParamBinder::int($id)],
         );
+        return $result;
     }
 
     /** @return array<int, UserDto> */
     public function findActive(): array
     {
-        /** @var array<int, UserDto> */
-        return $this->fetchAll(
+        /** @var array<int, UserDto> $results */
+        $results = $this->fetchAll(
             'SELECT * FROM users WHERE active = :active ORDER BY name ASC',
             [':active' => ParamBinder::bool(true)],
         );
+        return $results;
     }
 
     public function save(int $id, string $name, string $email): int
@@ -132,24 +156,54 @@ Always use `ParamBinder` — **never interpolate** values into SQL strings.
 
 ## Transactions
 
-Use `ConnectionInterface::transaction()`:
+KPHP does not support `callable` as a parameter type.  
+Always use `TransactionCallbackInterface` — **not** closures.
 
 ```php
-$conn->transaction(function (ConnectionInterface $conn) use ($userRepo, $orderRepo): void {
-    $userRepo->save(1, 'Alice', 'alice@example.com');
-    $orderRepo->createFor(1);
-    // Automatically committed; rolled back on any exception
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
+
+// ❌ FORBIDDEN (not KPHP-compatible)
+// $conn->transaction(function (ConnectionInterface $conn) use ($data): void { ... });
+
+// ✅ CORRECT (KPHP-compatible)
+$conn->transaction(new class ($userRepo, $orderRepo) implements TransactionCallbackInterface {
+    /** @var UserRepository */
+    private UserRepository $userRepo;
+    /** @var OrderRepository */
+    private OrderRepository $orderRepo;
+
+    public function __construct(UserRepository $u, OrderRepository $o)
+    {
+        $this->userRepo   = $u;
+        $this->orderRepo  = $o;
+    }
+
+    public function execute(ConnectionInterface $conn): int|string|bool|float|null
+    {
+        $this->userRepo->save(1, 'Alice', 'alice@example.com');
+        $this->orderRepo->createFor(1);
+        return null;
+        // Automatically committed; rolled back on any exception
+    }
 });
 ```
 
 ---
 
-## KPHP Compatibility
+## KPHP Compatibility Checklist
 
-- No `reflection`, `eval`, `variable variables`
-- No dynamic method calls (`$method()`)
-- `fromRow()` must use explicit property assignments — no array_map magic
-- All type casts must be explicit: `(int)`, `(string)`, `(bool)`, `(float)`
+| Rule | Status |
+|------|--------|
+| No `reflection`, `eval`, `variable variables` | ✅ |
+| No dynamic method calls (`$method()`) | ✅ |
+| No `callable` / `Closure` as parameter type | ✅ Use `TransactionCallbackInterface` |
+| No constructor property promotion (`__construct(private T $x)`) | ✅ Explicit properties |
+| No `readonly` properties | ✅ |
+| `fromRow()` returns `mixed` (not `object`) | ✅ |
+| All type casts explicit: `(int)`, `(string)`, `(bool)` | ✅ |
+| `str_starts_with()`, `str_ends_with()`, `str_contains()` — **forbidden** | Use `strpos()` / `substr()` |
+| `try/finally` without `catch` — **forbidden** | Add `catch (\Throwable $e)` |
 
 ---
 
@@ -174,10 +228,10 @@ $conn = ConnectionFactory::create([
 $repo = new UserRepository($conn);
 ```
 
-| Driver | Environment | Requires |
-|--------|-------------|----------|
-| `pdo_mysql` | Shared hosting / standard PHP | `ext-pdo_mysql` |
-| `ffi_mysql`  | KPHP compiled binary | `ext-ffi` + `libmysqlclient` |
+| Driver      | Environment                    | Requires                         |
+|-------------|-------------------------------|----------------------------------|
+| `pdo_mysql` | Shared hosting / standard PHP  | `ext-pdo_mysql`                  |
+| `ffi_mysql` | KPHP compiled binary           | `ext-ffi` + `libmysqlclient`     |
 
 See [drivers.md](./drivers.md) for full driver documentation.
 
