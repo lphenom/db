@@ -1,4 +1,4 @@
-.PHONY: up down build test test-unit test-integration lint lint-fix phpstan shell composer-install
+.PHONY: up down build test test-unit test-integration lint lint-fix phpstan shell composer-install kphp-check
 
 ## Build Docker images
 build:
@@ -51,3 +51,8 @@ shell:
 ## Install composer dependencies inside container
 composer-install:
 	docker compose exec app composer install --no-interaction --prefer-dist
+
+## Verify KPHP compilation + PHAR build (runs Dockerfile.check)
+kphp-check:
+	docker build -f Dockerfile.check -t lphenom-db-check .
+
