@@ -7,6 +7,7 @@ namespace LPhenom\Db\Driver;
 use FFI;
 use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Contract\ResultInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Exception\ConnectionException;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\Param;
@@ -44,6 +45,12 @@ use LPhenom\Db\Param\ParamBinder;
  *     - integers/floats are formatted directly (no escape needed)
  *     - strings are escaped and quoted
  *     - booleans become 1 or 0
+ *
+ * KPHP notes:
+ *   - No constructor property promotion (readonly) — explicit property declarations used.
+ *   - No callable — TransactionCallbackInterface is used.
+ *   - try/finally without catch is forbidden — exception stored in variable.
+ *   - FFI\Exception may extend \Error (PHP 8.x) — caught explicitly.
  *
  * Compatible with PHP 8.1+ and KPHP.
  */
@@ -118,36 +125,82 @@ final class FfiMySqlConnection implements ConnectionInterface
         int mysql_rollback(MYSQL *mysql);
         C;
 
-    /** @var FFI */
+    /**
+     * @var FFI
+     */
     private FFI $ffi;
 
-    /** @var FFI\CData MySQL handle */
+    /**
+     * @var FFI\CData
+     */
     private FFI\CData $mysql;
+
+    /**
+     * @var string
+     */
+    private string $host;
+
+    /**
+     * @var string
+     */
+    private string $user;
+
+    /**
+     * @var string
+     */
+    private string $password;
+
+    /**
+     * @var string
+     */
+    private string $database;
+
+    /**
+     * @var int
+     */
+    private int $port;
 
     /**
      * @throws ConnectionException
      */
     public function __construct(
-        private readonly string $host,
-        private readonly string $user,
-        private readonly string $password,
-        private readonly string $database,
-        private readonly int    $port = 3306,
+        string $host,
+        string $user,
+        string $password,
+        string $database,
+        int    $port = 3306,
         string $libPath = 'libmysqlclient.so.21',
     ) {
+        $this->host     = $host;
+        $this->user     = $user;
+        $this->password = $password;
+        $this->database = $database;
+        $this->port     = $port;
+
+        // FFI\Exception extends \Error in PHP 8.x — catch both explicitly
+        $ffiException = null;
         try {
             $this->ffi = FFI::cdef(self::C_HEADER, $libPath);
-        } catch (\Exception $e) {
-            throw new ConnectionException(
+        } catch (\FFI\Exception $e) {
+            $ffiException = new ConnectionException(
                 'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
                 0,
                 $e,
             );
         } catch (\Error $e) {
-            // FFI\Exception extends \Error (not \Exception) on PHP 8.2+
-            throw new ConnectionException(
+            $ffiException = new ConnectionException(
                 'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
             );
+        } catch (\Exception $e) {
+            $ffiException = new ConnectionException(
+                'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
+                0,
+                $e,
+            );
+        }
+
+        if ($ffiException !== null) {
+            throw $ffiException;
         }
 
         $this->connect();
@@ -230,25 +283,35 @@ final class FfiMySqlConnection implements ConnectionInterface
     }
 
     /**
-     * @throws \Exception
+     * Run callback inside a transaction.
+     *
+     * KPHP note: callable is forbidden — TransactionCallbackInterface is used.
+     * KPHP note: try/finally without catch is forbidden — exception stored in variable.
+     *
+     * @throws \Throwable
      */
-    public function transaction(callable $callback): int|string|bool|float|null
+    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null
     {
         $this->ffi->mysql_autocommit($this->mysql, 0);
 
+        $exception = null;
+        $result = null;
         try {
-            $result = $callback($this);
+            $result = $callback->execute($this);
             $this->ffi->mysql_commit($this->mysql);
-
-            /** @var int|string|bool|float|null $result */
-            return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $exception = $e;
             $this->ffi->mysql_rollback($this->mysql);
-
-            throw $e;
-        } finally {
-            $this->ffi->mysql_autocommit($this->mysql, 1);
         }
+
+        // Restore autocommit regardless of outcome (replaces try/finally)
+        $this->ffi->mysql_autocommit($this->mysql, 1);
+
+        if ($exception !== null) {
+            throw $exception;
+        }
+
+        return $result;
     }
 
     public function close(): void

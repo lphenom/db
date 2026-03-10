@@ -12,15 +12,23 @@ use LPhenom\Db\Param\ParamBinder;
  * DDL helper for schema_migrations tracking table.
  *
  * Manages the `schema_migrations` table used to track applied migrations.
+ *
+ * KPHP note: constructor property promotion with readonly is not supported.
+ *
  * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).
  */
 final class SchemaMigrations
 {
     private const TABLE = 'schema_migrations';
 
-    public function __construct(
-        private readonly ConnectionInterface $conn,
-    ) {
+    /**
+     * @var ConnectionInterface
+     */
+    private ConnectionInterface $conn;
+
+    public function __construct(ConnectionInterface $conn)
+    {
+        $this->conn = $conn;
     }
 
     /**

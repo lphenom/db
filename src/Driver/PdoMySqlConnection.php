@@ -6,6 +6,7 @@ namespace LPhenom\Db\Driver;
 
 use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Contract\ResultInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Exception\ConnectionException;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\Param;
@@ -17,9 +18,11 @@ use PDOException;
  *
  * Suitable for shared hosting environments.
  * Compatible with PHP 8.1+ (no reflection/eval/magic).
+ * Note: PDO is not available in KPHP; use FfiMySqlConnection in compiled mode.
  */
 final class PdoMySqlConnection implements ConnectionInterface
 {
+    /** @var PDO */
     private PDO $pdo;
 
     /**
@@ -85,23 +88,32 @@ final class PdoMySqlConnection implements ConnectionInterface
     }
 
     /**
-     * @throws \Exception
+     * Run callback inside a transaction.
+     * Commits on success, rolls back on exception.
+     *
+     * KPHP note: callable is forbidden — TransactionCallbackInterface is used.
+     *
+     * @throws \Throwable
      */
-    public function transaction(callable $callback): int|string|bool|float|null
+    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null
     {
         $this->pdo->beginTransaction();
 
+        $exception = null;
+        $result = null;
         try {
-            $result = $callback($this);
+            $result = $callback->execute($this);
             $this->pdo->commit();
-
-            /** @var int|string|bool|float|null $result */
-            return $result;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $exception = $e;
             $this->pdo->rollBack();
-
-            throw $e;
         }
+
+        if ($exception !== null) {
+            throw $exception;
+        }
+
+        return $result;
     }
 
     /**

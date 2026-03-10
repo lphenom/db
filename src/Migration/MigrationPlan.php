@@ -9,15 +9,35 @@ use DateTimeImmutable;
 /**
  * Immutable DTO representing a migration execution plan entry.
  *
+ * KPHP note: constructor property promotion with readonly is not supported.
+ *
  * Compatible with PHP 8.1+ and KPHP.
  */
 final class MigrationPlan
 {
+    /**
+     * @var string
+     */
+    public string $version;
+
+    /**
+     * @var string
+     */
+    public string $name;
+
+    /**
+     * @var DateTimeImmutable|null
+     */
+    public ?DateTimeImmutable $appliedAt;
+
     public function __construct(
-        public readonly string $version,
-        public readonly string $name,
-        public readonly ?DateTimeImmutable $appliedAt = null,
+        string $version,
+        string $name,
+        ?DateTimeImmutable $appliedAt = null,
     ) {
+        $this->version   = $version;
+        $this->name      = $name;
+        $this->appliedAt = $appliedAt;
     }
 
     /**

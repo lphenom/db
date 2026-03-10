@@ -7,18 +7,31 @@ namespace LPhenom\Db\Param;
 /**
  * Immutable value-object representing a bound SQL parameter with its PDO type.
  *
- * KPHP note: mixed is not supported in KPHP — value uses explicit union type.
+ * KPHP notes:
+ *   - Constructor property promotion with readonly is not supported.
+ *   - mixed is not used — explicit union type is used instead.
+ *
  * Compatible with PHP 8.1+ and KPHP.
  */
 final class Param
 {
     /**
+     * @var int|string|bool|float|null
+     */
+    public int|string|bool|float|null $value;
+
+    /**
+     * @var int PDO::PARAM_* constant value (0=NULL, 1=INT, 2=STR, 5=BOOL)
+     */
+    public int $type;
+
+    /**
      * @param int|string|bool|float|null $value
      * @param int                        $type  PDO::PARAM_* constant value (0=NULL, 1=INT, 2=STR, 5=BOOL)
      */
-    public function __construct(
-        public readonly int|string|bool|float|null $value,
-        public readonly int $type,
-    ) {
+    public function __construct(int|string|bool|float|null $value, int $type)
+    {
+        $this->value = $value;
+        $this->type  = $type;
     }
 }

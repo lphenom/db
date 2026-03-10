@@ -6,10 +6,11 @@ namespace LPhenom\Db\Driver;
 
 use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Contract\ResultInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Exception\NotImplementedException;
 
 /**
- * Placeholder connection for KPHP FFI driver (not yet implemented).
+ * Placeholder connection for environments where the real FFI driver is unavailable.
  *
  * This stub satisfies ConnectionInterface for KPHP compilation compatibility.
  * All methods throw NotImplementedException at runtime.
@@ -39,7 +40,7 @@ final class FfiConnectionStub implements ConnectionInterface
     /**
      * @throws NotImplementedException
      */
-    public function transaction(callable $callback): int|string|bool|float|null
+    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null
     {
         throw new NotImplementedException('FFI driver is not implemented. Use PdoMySqlConnection instead.');
     }

@@ -13,17 +13,29 @@ use LPhenom\Db\Contract\ResultInterface;
  * Wraps mysql_fetch_row / mysql_fetch_fields calls.
  * Frees the result resource on destruction.
  *
+ * KPHP note: constructor property promotion with readonly is not supported.
+ *
  * Compatible with PHP 8.1+ and KPHP.
  */
 final class FfiMySqlResult implements ResultInterface
 {
+    /**
+     * @var FFI
+     */
+    private FFI $ffi;
+
+    /**
+     * @var FFI\CData
+     */
+    private FFI\CData $result;
+
     /** @var array<string>|null */
     private ?array $columnNames = null;
 
-    public function __construct(
-        private readonly FFI       $ffi,
-        private readonly FFI\CData $result,
-    ) {
+    public function __construct(FFI $ffi, FFI\CData $result)
+    {
+        $this->ffi    = $ffi;
+        $this->result = $result;
     }
 
     /**

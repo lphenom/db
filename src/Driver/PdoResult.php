@@ -11,12 +11,16 @@ use PDOStatement;
  * PDO-backed result set.
  *
  * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).
+ * KPHP note: constructor property promotion with readonly is not supported.
  */
 final class PdoResult implements ResultInterface
 {
-    public function __construct(
-        private readonly PDOStatement $statement,
-    ) {
+    /** @var PDOStatement */
+    private PDOStatement $statement;
+
+    public function __construct(PDOStatement $statement)
+    {
+        $this->statement = $statement;
     }
 
     /**
