@@ -13,9 +13,3 @@ parameters:
         -
             message: '#Call to an undefined method FFI::#'
             path: src/Driver/FfiMySqlResult.php
-        # FFI::cdef() throws FFI\Exception when lib is missing.
-        # On PHP 8.1 FFI\Exception extends \Exception; on PHP 8.2+ it extends \Error.
-        # PHPStan may report one of the two catch blocks as "dead" depending on PHP version.
-        -
-            message: '#Dead catch - (Exception|Error) is never thrown in the try block#'
-            path: src/Driver/FfiMySqlConnection.php
