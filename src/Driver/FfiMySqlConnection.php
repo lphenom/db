@@ -177,25 +177,17 @@ final class FfiMySqlConnection implements ConnectionInterface
         $this->database = $database;
         $this->port     = $port;
 
-        // FFI\Exception extends \Error in PHP 8.x — catch both explicitly
+        // FFI::cdef() throws FFI\Exception (extends \Error) when the library cannot be loaded.
+        // We catch \Throwable to cover all PHP versions and configurations reliably,
+        // then wrap it into ConnectionException so callers always receive a consistent type.
         $ffiException = null;
         try {
             $this->ffi = FFI::cdef(self::C_HEADER, $libPath);
-        } catch (\FFI\Exception $e) {
+        } catch (\Throwable $e) {
             $ffiException = new ConnectionException(
                 'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
                 0,
-                $e,
-            );
-        } catch (\Error $e) {
-            $ffiException = new ConnectionException(
-                'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
-            );
-        } catch (\Exception $e) {
-            $ffiException = new ConnectionException(
-                'Failed to load libmysqlclient via FFI: ' . $e->getMessage(),
-                0,
-                $e,
+                $e instanceof \Exception ? $e : null,
             );
         }
 

@@ -65,7 +65,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: pdo, pdo_sqlite, pdo_mysql, ffi
-          coverage: xdebug
+          coverage: none
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
