@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Tests\Unit\Driver;
 
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Driver\PdoMySqlConnection;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\ParamBinder;
@@ -97,8 +99,22 @@ final class PdoMySqlConnectionTest extends TestCase
 
     public function testTransactionCommitsOnSuccess(): void
     {
-        $this->conn->transaction(function (PdoMySqlConnection $conn): void {
-            $conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
+        $conn = $this->conn;
+
+        $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+            /** @var PdoMySqlConnection */
+            private PdoMySqlConnection $conn;
+
+            public function __construct(PdoMySqlConnection $conn)
+            {
+                $this->conn = $conn;
+            }
+
+            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            {
+                $this->conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
+                return null;
+            }
         });
 
         $row = $this->conn->query('SELECT * FROM users WHERE id = 1')->fetchOne();
@@ -107,13 +123,25 @@ final class PdoMySqlConnectionTest extends TestCase
 
     public function testTransactionRollsBackOnException(): void
     {
-        try {
-            $this->conn->transaction(function (PdoMySqlConnection $conn): void {
-                $conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
+        $conn = $this->conn;
 
-                throw new \RuntimeException('Something went wrong');
+        try {
+            $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+                /** @var PdoMySqlConnection */
+                private PdoMySqlConnection $conn;
+
+                public function __construct(PdoMySqlConnection $conn)
+                {
+                    $this->conn = $conn;
+                }
+
+                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                {
+                    $this->conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
+                    throw new \RuntimeException('Something went wrong');
+                }
             });
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $e) {
             // expected
         }
 

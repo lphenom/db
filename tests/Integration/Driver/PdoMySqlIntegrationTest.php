@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Tests\Integration\Driver;
 
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Driver\PdoMySqlConnection;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\ParamBinder;
@@ -142,11 +144,25 @@ final class PdoMySqlIntegrationTest extends TestCase
 
     public function testTransactionCommitsOnSuccess(): void
     {
-        $this->conn->transaction(function (PdoMySqlConnection $c): void {
-            $c->execute(
-                'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
-                [':name' => ParamBinder::str('Tx'), ':email' => ParamBinder::str('tx@x.com')],
-            );
+        $conn = $this->conn;
+
+        $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+            /** @var PdoMySqlConnection */
+            private PdoMySqlConnection $conn;
+
+            public function __construct(PdoMySqlConnection $conn)
+            {
+                $this->conn = $conn;
+            }
+
+            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            {
+                $this->conn->execute(
+                    'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
+                    [':name' => ParamBinder::str('Tx'), ':email' => ParamBinder::str('tx@x.com')],
+                );
+                return null;
+            }
         });
 
         $row = $this->conn->query('SELECT * FROM inttest_users WHERE email = :email', [':email' => ParamBinder::str('tx@x.com')])->fetchOne();
@@ -155,16 +171,29 @@ final class PdoMySqlIntegrationTest extends TestCase
 
     public function testTransactionRollsBackOnException(): void
     {
-        try {
-            $this->conn->transaction(function (PdoMySqlConnection $c): void {
-                $c->execute(
-                    'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
-                    [':name' => ParamBinder::str('TxFail'), ':email' => ParamBinder::str('txfail@x.com')],
-                );
+        $conn = $this->conn;
 
-                throw new \RuntimeException('rollback!');
+        try {
+            $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+                /** @var PdoMySqlConnection */
+                private PdoMySqlConnection $conn;
+
+                public function __construct(PdoMySqlConnection $conn)
+                {
+                    $this->conn = $conn;
+                }
+
+                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                {
+                    $this->conn->execute(
+                        'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
+                        [':name' => ParamBinder::str('TxFail'), ':email' => ParamBinder::str('txfail@x.com')],
+                    );
+
+                    throw new \RuntimeException('rollback!');
+                }
             });
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $e) {
             // expected
         }
 

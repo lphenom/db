@@ -11,14 +11,31 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Simple DTO for testing.
+ *
+ * KPHP note: constructor property promotion with readonly is not supported.
  */
 final class UserDto
 {
-    public function __construct(
-        public readonly int $id,
-        public readonly string $name,
-        public readonly bool $active,
-    ) {
+    /**
+     * @var int
+     */
+    public int $id;
+
+    /**
+     * @var string
+     */
+    public string $name;
+
+    /**
+     * @var bool
+     */
+    public bool $active;
+
+    public function __construct(int $id, string $name, bool $active)
+    {
+        $this->id     = $id;
+        $this->name   = $name;
+        $this->active = $active;
     }
 
     /**
@@ -27,19 +44,25 @@ final class UserDto
     public static function fromRow(array $row): self
     {
         return new self(
-            id: (int) $row['id'],
-            name: (string) $row['name'],
-            active: (bool) $row['active'],
+            (int) $row['id'],
+            (string) $row['name'],
+            (bool) $row['active'],
         );
     }
 }
 
 /**
  * Concrete repository for testing purposes.
+ *
+ * KPHP note: fromRow() returns mixed (not object) — use concrete type in docblock.
  */
 final class UserRepository extends AbstractRepository
 {
-    protected function fromRow(array $row): object
+    /**
+     * @param array<string, mixed> $row
+     * @return UserDto
+     */
+    protected function fromRow(array $row): mixed
     {
         return UserDto::fromRow($row);
     }

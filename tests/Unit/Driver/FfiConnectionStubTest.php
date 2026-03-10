@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Tests\Unit\Driver;
 
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Driver\FfiConnectionStub;
 use LPhenom\Db\Exception\NotImplementedException;
 use PHPUnit\Framework\TestCase;
@@ -41,7 +43,12 @@ final class FfiConnectionStubTest extends TestCase
         $this->expectException(NotImplementedException::class);
         $this->expectExceptionMessage('FFI driver is not implemented');
 
-        $this->stub->transaction(static function (): void {
+        // KPHP note: callable is not allowed — use TransactionCallbackInterface
+        $this->stub->transaction(new class () implements TransactionCallbackInterface {
+            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            {
+                return null;
+            }
         });
     }
 }

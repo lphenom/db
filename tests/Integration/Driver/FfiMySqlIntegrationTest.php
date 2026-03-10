@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace LPhenom\Db\Tests\Integration\Driver;
 
+use LPhenom\Db\Contract\ConnectionInterface;
+use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Driver\FfiMySqlConnection;
 use LPhenom\Db\Exception\QueryException;
 use LPhenom\Db\Param\ParamBinder;
@@ -122,11 +124,25 @@ final class FfiMySqlIntegrationTest extends TestCase
 
     public function testTransactionCommitsOnSuccess(): void
     {
-        $this->conn->transaction(function (FfiMySqlConnection $c): void {
-            $c->execute(
-                'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',
-                [':n' => ParamBinder::str('Tx'), ':e' => ParamBinder::str('tx@x.com')],
-            );
+        $conn = $this->conn;
+
+        $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+            /** @var FfiMySqlConnection */
+            private FfiMySqlConnection $conn;
+
+            public function __construct(FfiMySqlConnection $conn)
+            {
+                $this->conn = $conn;
+            }
+
+            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            {
+                $this->conn->execute(
+                    'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',
+                    [':n' => ParamBinder::str('Tx'), ':e' => ParamBinder::str('tx@x.com')],
+                );
+                return null;
+            }
         });
 
         $row = $this->conn->query(
@@ -139,16 +155,29 @@ final class FfiMySqlIntegrationTest extends TestCase
 
     public function testTransactionRollsBackOnException(): void
     {
-        try {
-            $this->conn->transaction(function (FfiMySqlConnection $c): void {
-                $c->execute(
-                    'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',
-                    [':n' => ParamBinder::str('TxFail'), ':e' => ParamBinder::str('txfail@x.com')],
-                );
+        $conn = $this->conn;
 
-                throw new \RuntimeException('rollback!');
+        try {
+            $this->conn->transaction(new class ($conn) implements TransactionCallbackInterface {
+                /** @var FfiMySqlConnection */
+                private FfiMySqlConnection $conn;
+
+                public function __construct(FfiMySqlConnection $conn)
+                {
+                    $this->conn = $conn;
+                }
+
+                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                {
+                    $this->conn->execute(
+                        'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',
+                        [':n' => ParamBinder::str('TxFail'), ':e' => ParamBinder::str('txfail@x.com')],
+                    );
+
+                    throw new \RuntimeException('rollback!');
+                }
             });
-        } catch (\RuntimeException) {
+        } catch (\RuntimeException $e) {
             // expected
         }
 
