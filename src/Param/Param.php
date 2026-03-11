@@ -36,4 +36,36 @@ final class Param
         $this->value = $value;
         $this->type  = $type;
     }
+
+    /**
+     * Create a string parameter (PDO::PARAM_STR = 2).
+     */
+    public static function str(string $value): self
+    {
+        return new self($value, 2);
+    }
+
+    /**
+     * Create an integer parameter (PDO::PARAM_INT = 1).
+     */
+    public static function int(int $value): self
+    {
+        return new self($value, 1);
+    }
+
+    /**
+     * Create a boolean parameter (PDO::PARAM_BOOL = 5).
+     */
+    public static function bool(bool $value): self
+    {
+        return new self($value, 5);
+    }
+
+    /**
+     * Create a null parameter (PDO::PARAM_NULL = 0).
+     */
+    public static function null(): self
+    {
+        return new self(null, 0);
+    }
 }
