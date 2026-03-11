@@ -9,6 +9,8 @@ use LPhenom\Db\Contract\ResultInterface;
 use LPhenom\Db\Param\Param;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Base class for all repositories.
  *
  * Provides thin wrappers around ConnectionInterface.

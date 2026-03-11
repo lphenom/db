@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LPhenom\Db\Param;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Immutable value-object representing a bound SQL parameter with its PDO type.
  *
  * KPHP notes:

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LPhenom\Db\Contract;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Database connection contract.
  *
  * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).

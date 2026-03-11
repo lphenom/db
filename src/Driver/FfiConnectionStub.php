@@ -10,6 +10,8 @@ use LPhenom\Db\Contract\TransactionCallbackInterface;
 use LPhenom\Db\Exception\NotImplementedException;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Placeholder connection for environments where the real FFI driver is unavailable.
  *
  * This stub satisfies ConnectionInterface for KPHP compilation compatibility.

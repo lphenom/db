@@ -8,6 +8,8 @@ use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Exception\ConnectionException;
 
 /**
+ * @lphenom-build shared
+ *
  * Factory that creates a ConnectionInterface instance based on a driver config.
  *
  * This is the single place where driver selection happens.
@@ -17,6 +19,10 @@ use LPhenom\Db\Exception\ConnectionException;
  * Supported drivers:
  *   "pdo_mysql"  — PdoMySqlConnection (standard PHP / shared hosting)
  *   "ffi_mysql"  — FfiMySqlConnection  (KPHP compiled mode / FFI-capable PHP)
+ *
+ * Note: In KPHP binary mode ConnectionFactory is NOT included — the connection
+ * is created directly (new FfiMySqlConnection(...)) in the application bootstrap.
+ * Driver selection at runtime is not needed in compiled binaries.
  *
  * Config array shape:
  * <code>

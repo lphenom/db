@@ -7,6 +7,8 @@ namespace LPhenom\Db\Migration;
 use LPhenom\Db\Contract\ConnectionInterface;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Database migration contract.
  *
  * Each migration must implement up() and down() methods.

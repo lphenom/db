@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LPhenom\Db\Param;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Factory for creating type-safe bound parameters.
  *
  * Uses integer constants matching PDO::PARAM_* values so that the same

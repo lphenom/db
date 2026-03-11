@@ -8,6 +8,8 @@ use FFI;
 use LPhenom\Db\Contract\ResultInterface;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * ResultInterface backed by a MySQL FFI result set (MYSQL_RES*).
  *
  * Wraps mysql_fetch_row / mysql_fetch_fields calls.

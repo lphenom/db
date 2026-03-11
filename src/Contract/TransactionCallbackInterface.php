@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace LPhenom\Db\Contract;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Callback interface for database transactions.
  *
  * Used instead of `callable` for KPHP compatibility.

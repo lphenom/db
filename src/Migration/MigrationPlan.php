@@ -7,6 +7,8 @@ namespace LPhenom\Db\Migration;
 use DateTimeImmutable;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * Immutable DTO representing a migration execution plan entry.
  *
  * KPHP note: constructor property promotion with readonly is not supported.

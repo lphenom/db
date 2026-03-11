@@ -9,6 +9,8 @@ use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Param\ParamBinder;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * DDL helper for schema_migrations tracking table.
  *
  * Manages the `schema_migrations` table used to track applied migrations.

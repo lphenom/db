@@ -14,6 +14,8 @@ use LPhenom\Db\Param\Param;
 use LPhenom\Db\Param\ParamBinder;
 
 /**
+ * @lphenom-build shared,kphp
+ *
  * KPHP FFI MySQL driver.
  *
  * Uses libmysqlclient via PHP FFI extension to execute raw SQL queries.

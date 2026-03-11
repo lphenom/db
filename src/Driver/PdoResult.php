@@ -8,9 +8,12 @@ use LPhenom\Db\Contract\ResultInterface;
 use PDOStatement;
 
 /**
+ * @lphenom-build shared
+ *
  * PDO-backed result set.
  *
- * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).
+ * Compatible with PHP 8.1+ (no reflection/eval/magic).
+ * Note: PDO is not available in KPHP; use FfiMySqlResult in compiled mode.
  * KPHP note: constructor property promotion with readonly is not supported.
  */
 final class PdoResult implements ResultInterface

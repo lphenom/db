@@ -14,6 +14,8 @@ use PDO;
 use PDOException;
 
 /**
+ * @lphenom-build shared
+ *
  * PDO MySQL database connection.
  *
  * Suitable for shared hosting environments.
