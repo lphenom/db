@@ -17,18 +17,24 @@
 # KPHP parses the source with its own PHP parser — it does NOT need PHP 8.1
 # at compile time; the output binary runs without PHP.
 #
-# Note: PDO driver (PdoMySqlConnection) is excluded from KPHP build because
-# PDO is not available in KPHP runtime. The FFI driver is the KPHP driver.
-# FfiConnectionStub is included for compilation verification.
+# FFI driver (FfiMySqlConnection + FfiMySqlResult) is fully included.
+# KPHP resolves all mysql_*() method types at compile time from:
+#   src/Driver/mysql.h  (annotated // @kphp-ffi-scope mysql)
+# via FFI::scope('mysql') in lphenom_db_mysql_get_ffi().
+#
+# libmysqlclient-dev is installed so that:
+#   - KPHP's C++ backend can link the generated FFI calls at compile time.
+#   - The compiled binary can dlopen libmysqlclient.so.21 at runtime.
+# PDO driver (PdoMySqlConnection) is excluded from KPHP build because
+# PDO is not available in KPHP runtime.
 # -----------------------------------------------------------------------------
 FROM vkcom/kphp:latest AS kphp-build
 
-# Install php8.1-vkext from the official vkpartner APT repository (focal = Ubuntu 20.04).
-# This provides KPHP-aware PHP extensions / stubs for static analysis tools.
-# NOTE: This is OPTIONAL dev tooling — compilation does NOT require vkext.
-#       Installation may fail in air-gapped environments; build continues regardless.
+# Install libmysqlclient-dev for FFI linking + optional vkext for dev tooling.
 RUN apt-get update -qq \
-    && apt-get install -y --no-install-recommends wget ca-certificates \
+    && apt-get install -y --no-install-recommends \
+         wget ca-certificates \
+         libmysqlclient-dev \
     && wget -q --timeout=10 -O /etc/apt/trusted.gpg.d/vkpartner.asc \
          https://artifactory-external.vkpartner.ru/artifactory/api/gpg/key/public \
     && echo "deb [arch=amd64] https://artifactory-external.vkpartner.ru/artifactory/kphp focal main" \
@@ -44,6 +50,10 @@ WORKDIR /build
 # Copy only the source files needed for compilation
 COPY src/    ./src/
 COPY build/  ./build/
+
+# Make mysql.h discoverable by KPHP from the working directory.
+# KPHP scans the working directory for *.h files with // @kphp-ffi-scope annotations.
+RUN cp /build/src/Driver/mysql.h /build/mysql.h
 
 # Compile to binary.
 # --output-dir: where to put the compiled binary

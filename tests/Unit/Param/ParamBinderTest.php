@@ -6,7 +6,6 @@ namespace LPhenom\Db\Tests\Unit\Param;
 
 use LPhenom\Db\Param\Param;
 use LPhenom\Db\Param\ParamBinder;
-use PDO;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -20,8 +19,10 @@ final class ParamBinderTest extends TestCase
         $param = ParamBinder::int(42);
 
         self::assertInstanceOf(Param::class, $param);
-        self::assertSame(42, $param->value);
-        self::assertSame(PDO::PARAM_INT, $param->type);
+        // KPHP-compat: value stored as string representation
+        self::assertSame('42', $param->value);
+        self::assertSame(ParamBinder::PARAM_INT, $param->type);
+        self::assertFalse($param->isNull);
     }
 
     public function testStrReturnsParamWithParamStr(): void
@@ -30,7 +31,8 @@ final class ParamBinderTest extends TestCase
 
         self::assertInstanceOf(Param::class, $param);
         self::assertSame('hello', $param->value);
-        self::assertSame(PDO::PARAM_STR, $param->type);
+        self::assertSame(ParamBinder::PARAM_STR, $param->type);
+        self::assertFalse($param->isNull);
     }
 
     public function testBoolTrueReturnsParamWithParamBool(): void
@@ -38,16 +40,19 @@ final class ParamBinderTest extends TestCase
         $param = ParamBinder::bool(true);
 
         self::assertInstanceOf(Param::class, $param);
-        self::assertSame(true, $param->value);
-        self::assertSame(PDO::PARAM_BOOL, $param->type);
+        // KPHP-compat: bool stored as "1"/"0" string
+        self::assertSame('1', $param->value);
+        self::assertSame(ParamBinder::PARAM_BOOL, $param->type);
+        self::assertFalse($param->isNull);
     }
 
     public function testBoolFalseReturnsParamWithParamBool(): void
     {
         $param = ParamBinder::bool(false);
 
-        self::assertSame(false, $param->value);
-        self::assertSame(PDO::PARAM_BOOL, $param->type);
+        self::assertSame('0', $param->value);
+        self::assertSame(ParamBinder::PARAM_BOOL, $param->type);
+        self::assertFalse($param->isNull);
     }
 
     public function testNullReturnsParamWithParamNull(): void
@@ -55,8 +60,10 @@ final class ParamBinderTest extends TestCase
         $param = ParamBinder::null();
 
         self::assertInstanceOf(Param::class, $param);
-        self::assertNull($param->value);
-        self::assertSame(PDO::PARAM_NULL, $param->type);
+        // KPHP-compat: null represented by isNull flag
+        self::assertTrue($param->isNull);
+        self::assertSame('', $param->value);
+        self::assertSame(ParamBinder::PARAM_NULL, $param->type);
     }
 
     public function testFloatReturnsParamAsStringWithParamStr(): void
@@ -65,16 +72,18 @@ final class ParamBinderTest extends TestCase
 
         self::assertInstanceOf(Param::class, $param);
         self::assertIsString($param->value);
-        self::assertSame(PDO::PARAM_STR, $param->type);
+        self::assertSame(ParamBinder::PARAM_STR, $param->type);
         self::assertSame('3.14', $param->value);
+        self::assertFalse($param->isNull);
     }
 
     public function testIntZeroIsValid(): void
     {
         $param = ParamBinder::int(0);
 
-        self::assertSame(0, $param->value);
-        self::assertSame(PDO::PARAM_INT, $param->type);
+        self::assertSame('0', $param->value);
+        self::assertSame(ParamBinder::PARAM_INT, $param->type);
+        self::assertFalse($param->isNull);
     }
 
     public function testStrEmptyStringIsValid(): void
@@ -82,6 +91,24 @@ final class ParamBinderTest extends TestCase
         $param = ParamBinder::str('');
 
         self::assertSame('', $param->value);
-        self::assertSame(PDO::PARAM_STR, $param->type);
+        self::assertSame(ParamBinder::PARAM_STR, $param->type);
+        self::assertFalse($param->isNull);
+    }
+
+    public function testParamDirectConstructionStr(): void
+    {
+        $param = new Param('hello', ParamBinder::PARAM_STR);
+
+        self::assertSame('hello', $param->value);
+        self::assertSame(ParamBinder::PARAM_STR, $param->type);
+        self::assertFalse($param->isNull);
+    }
+
+    public function testParamDirectConstructionNull(): void
+    {
+        $param = new Param('', ParamBinder::PARAM_NULL, true);
+
+        self::assertTrue($param->isNull);
+        self::assertSame(ParamBinder::PARAM_NULL, $param->type);
     }
 }

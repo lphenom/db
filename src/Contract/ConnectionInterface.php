@@ -37,8 +37,9 @@ interface ConnectionInterface
      * Returns whatever the callback returns (null if void).
      *
      * KPHP note: `callable` is forbidden — use TransactionCallbackInterface.
+     * KPHP note: complex union int|string|bool|float|null is not supported — mixed is used.
      *
-     * @return int|string|bool|float|null
+     * @return mixed
      */
-    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null;
+    public function transaction(TransactionCallbackInterface $callback): mixed;
 }

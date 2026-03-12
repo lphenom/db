@@ -22,6 +22,10 @@ namespace LPhenom\Db\Param;
  * PDO does not have a PARAM_FLOAT constant, so float values are stored
  * as strings (PARAM_STR = 2) to preserve precision and avoid silent casting.
  *
+ * KPHP note: Param::$value is string (not mixed) to avoid KPHP union-type inference
+ * errors (int|string|bool|null is not a valid KPHP union). All values are
+ * pre-formatted as strings. Null is indicated by Param::$isNull = true.
+ *
  * Compatible with PHP 8.1+ and KPHP.
  */
 final class ParamBinder
@@ -44,10 +48,11 @@ final class ParamBinder
 
     /**
      * Bind an integer value (PARAM_INT = 1).
+     * Stored as string representation: e.g. "42".
      */
     public static function int(int $value): Param
     {
-        return new Param($value, self::PARAM_INT);
+        return new Param((string) $value, self::PARAM_INT);
     }
 
     /**
@@ -60,18 +65,20 @@ final class ParamBinder
 
     /**
      * Bind a boolean value (PARAM_BOOL = 5).
+     * Stored as "1" (true) or "0" (false).
      */
     public static function bool(bool $value): Param
     {
-        return new Param($value, self::PARAM_BOOL);
+        return new Param($value ? '1' : '0', self::PARAM_BOOL);
     }
 
     /**
      * Bind a null value (PARAM_NULL = 0).
+     * Param::$isNull is set to true; PDO receives null.
      */
     public static function null(): Param
     {
-        return new Param(null, self::PARAM_NULL);
+        return new Param('', self::PARAM_NULL, true);
     }
 
     /**

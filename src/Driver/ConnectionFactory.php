@@ -33,10 +33,11 @@ use LPhenom\Db\Exception\ConnectionException;
  *     'dbname'   => 'myapp',
  *     'user'     => 'root',
  *     'password' => 'secret',
- *     // For ffi_mysql only:
- *     'ffi_lib'  => 'libmysqlclient.so.21',  // optional, default libmysqlclient.so.21
  * ]
  * </code>
+ *
+ * For ffi_mysql library path: set FFI_MYSQL_LIB env variable (e.g. "libmariadb.so.3" on Alpine)
+ * or configure PHP FFI preloading via build/ffi-preload.php.
  *
  * Compatible with PHP 8.1+ and KPHP (no reflection/eval/magic).
  */
@@ -104,8 +105,7 @@ final class ConnectionFactory
         $dbname   = isset($config['dbname']) ? (string) $config['dbname'] : '';
         $user     = isset($config['user']) ? (string) $config['user'] : '';
         $password = isset($config['password']) ? (string) $config['password'] : '';
-        $lib      = isset($config['ffi_lib']) ? (string) $config['ffi_lib'] : 'libmysqlclient.so.21';
 
-        return new FfiMySqlConnection($host, $user, $password, $dbname, $port, $lib);
+        return new FfiMySqlConnection($host, $user, $password, $dbname, $port);
     }
 }

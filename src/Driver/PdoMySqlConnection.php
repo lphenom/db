@@ -97,7 +97,7 @@ final class PdoMySqlConnection implements ConnectionInterface
      *
      * @throws \Throwable
      */
-    public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null
+    public function transaction(TransactionCallbackInterface $callback): mixed
     {
         $this->pdo->beginTransaction();
 
@@ -124,7 +124,7 @@ final class PdoMySqlConnection implements ConnectionInterface
     private function bindParams(\PDOStatement $stmt, array $params): void
     {
         foreach ($params as $name => $param) {
-            $stmt->bindValue($name, $param->value, $param->type);
+            $stmt->bindValue($name, $param->isNull ? null : $param->value, $param->type);
         }
     }
 }

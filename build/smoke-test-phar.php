@@ -21,9 +21,21 @@ if (!file_exists($pharFile)) {
 require $pharFile;
 
 // Verify Param value objects
-$intParam = \LPhenom\Db\Param\ParamBinder::int(42);
-if ($intParam->value !== 42) {
-    fwrite(STDERR, 'ParamBinder::int() failed' . PHP_EOL);
+$intParam  = \LPhenom\Db\Param\ParamBinder::int(42);
+$nullParam = \LPhenom\Db\Param\ParamBinder::null();
+$boolParam = \LPhenom\Db\Param\ParamBinder::bool(true);
+
+// KPHP-compat: int/bool stored as string, null indicated by isNull flag
+if ($intParam->value !== '42') {
+    fwrite(STDERR, 'ParamBinder::int() failed — expected "42"' . PHP_EOL);
+    exit(1);
+}
+if ($boolParam->value !== '1') {
+    fwrite(STDERR, 'ParamBinder::bool() failed — expected "1"' . PHP_EOL);
+    exit(1);
+}
+if (!$nullParam->isNull) {
+    fwrite(STDERR, 'ParamBinder::null() failed — isNull should be true' . PHP_EOL);
     exit(1);
 }
 echo 'smoke-test: ParamBinder ok' . PHP_EOL;
@@ -36,15 +48,16 @@ if ($plan->isApplied() !== false) {
 }
 echo 'smoke-test: MigrationPlan ok' . PHP_EOL;
 
-// Verify FfiConnectionStub construction
-$stub = new \LPhenom\Db\Driver\FfiConnectionStub();
-try {
-    $stub->query('SELECT 1');
-    fwrite(STDERR, 'FfiConnectionStub should throw NotImplementedException' . PHP_EOL);
+// Verify FfiMySqlConnection class is autoloaded (no actual connection needed)
+if (!class_exists(\LPhenom\Db\Driver\FfiMySqlConnection::class)) {
+    fwrite(STDERR, 'FfiMySqlConnection class not found in autoloader' . PHP_EOL);
     exit(1);
-} catch (\LPhenom\Db\Exception\NotImplementedException $e) {
-    echo 'smoke-test: FfiConnectionStub ok' . PHP_EOL;
 }
+if (!class_exists(\LPhenom\Db\Driver\FfiMySqlResult::class)) {
+    fwrite(STDERR, 'FfiMySqlResult class not found in autoloader' . PHP_EOL);
+    exit(1);
+}
+echo 'smoke-test: FfiMySqlConnection autoload ok' . PHP_EOL;
 
 echo '=== PHAR smoke-test: OK ===' . PHP_EOL;
 

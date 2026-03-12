@@ -16,7 +16,7 @@ namespace LPhenom\Db\Contract;
  * <code>
  * $conn->transaction(new class($data) implements TransactionCallbackInterface {
  *     public function __construct(private array $data) {}
- *     public function execute(ConnectionInterface $conn): int|string|bool|float|null
+ *     public function execute(ConnectionInterface $conn): mixed
  *     {
  *         return $conn->execute('INSERT INTO ...', [...]);
  *     }
@@ -31,7 +31,9 @@ interface TransactionCallbackInterface
      * Executed inside a transaction.
      * Return value is passed through from ConnectionInterface::transaction().
      *
-     * @return int|string|bool|float|null
+     * KPHP note: complex union int|string|bool|float|null is not supported — mixed is used.
+     *
+     * @return mixed
      */
-    public function execute(ConnectionInterface $conn): int|string|bool|float|null;
+    public function execute(ConnectionInterface $conn): mixed;
 }

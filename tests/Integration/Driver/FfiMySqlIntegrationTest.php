@@ -48,10 +48,15 @@ final class FfiMySqlIntegrationTest extends TestCase
         $dbname   = (string) (getenv('DB_NAME') ?: 'lphenom');
         $user     = (string) (getenv('DB_USER') ?: 'lphenom');
         $password = (string) (getenv('DB_PASSWORD') ?: 'secret');
-        $lib      = (string) (getenv('FFI_MYSQL_LIB') ?: 'libmysqlclient.so.21');
+
+        // Library path override via FFI_MYSQL_LIB env var (e.g. libmariadb.so.3 on Alpine).
+        // lphenom_db_mysql_get_ffi() reads this env var in the FFI::cdef() fallback.
+        if (getenv('FFI_MYSQL_LIB') === false) {
+            putenv('FFI_MYSQL_LIB=libmysqlclient.so.21');
+        }
 
         try {
-            $this->conn = new FfiMySqlConnection($host, $user, $password, $dbname, $port, $lib);
+            $this->conn = new FfiMySqlConnection($host, $user, $password, $dbname, $port);
         } catch (\Throwable $e) {
             self::markTestSkipped('Could not create FfiMySqlConnection: ' . $e->getMessage());
         }
@@ -135,7 +140,7 @@ final class FfiMySqlIntegrationTest extends TestCase
                 $this->conn = $conn;
             }
 
-            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            public function execute(ConnectionInterface $conn): mixed
             {
                 $this->conn->execute(
                     'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',
@@ -167,7 +172,7 @@ final class FfiMySqlIntegrationTest extends TestCase
                     $this->conn = $conn;
                 }
 
-                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                public function execute(ConnectionInterface $conn): mixed
                 {
                     $this->conn->execute(
                         'INSERT INTO ffi_inttest_users (name, email, score, active) VALUES (:n, :e, 0, 1)',

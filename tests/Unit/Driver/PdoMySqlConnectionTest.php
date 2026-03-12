@@ -110,7 +110,7 @@ final class PdoMySqlConnectionTest extends TestCase
                 $this->conn = $conn;
             }
 
-            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            public function execute(ConnectionInterface $conn): mixed
             {
                 $this->conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
                 return null;
@@ -135,7 +135,7 @@ final class PdoMySqlConnectionTest extends TestCase
                     $this->conn = $conn;
                 }
 
-                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                public function execute(ConnectionInterface $conn): mixed
                 {
                     $this->conn->execute('INSERT INTO users (id, name, active) VALUES (1, \'Alice\', 1)');
                     throw new \RuntimeException('Something went wrong');

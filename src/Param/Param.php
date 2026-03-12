@@ -11,16 +11,22 @@ namespace LPhenom\Db\Param;
  *
  * KPHP notes:
  *   - Constructor property promotion with readonly is not supported.
- *   - mixed is not used — explicit union type is used instead.
+ *   - mixed $value is NOT used — KPHP infers int|string|bool|null union which is unsupported.
+ *   - Values are stored as string pre-representation for KPHP type safety.
+ *   - NULL is indicated by bool $isNull flag; $value is '' when null.
+ *   - PDO binding uses $isNull ? null : $value to pass proper null.
  *
  * Compatible with PHP 8.1+ and KPHP.
  */
 final class Param
 {
     /**
-     * @var int|string|bool|float|null
+     * String representation of the value (numeric for int/bool, raw string for str/float).
+     * Empty string when $isNull is true.
+     *
+     * @var string
      */
-    public int|string|bool|float|null $value;
+    public string $value;
 
     /**
      * @var int PDO::PARAM_* constant value (0=NULL, 1=INT, 2=STR, 5=BOOL)
@@ -28,13 +34,22 @@ final class Param
     public int $type;
 
     /**
-     * @param int|string|bool|float|null $value
-     * @param int                        $type  PDO::PARAM_* constant value (0=NULL, 1=INT, 2=STR, 5=BOOL)
+     * Whether this parameter represents a SQL NULL value.
+     *
+     * @var bool
      */
-    public function __construct(int|string|bool|float|null $value, int $type)
+    public bool $isNull;
+
+    /**
+     * @param string $value  String representation of the value; '' when $isNull is true
+     * @param int    $type   PDO::PARAM_* constant (0=NULL, 1=INT, 2=STR, 5=BOOL)
+     * @param bool   $isNull Whether the value is SQL NULL
+     */
+    public function __construct(string $value, int $type, bool $isNull = false)
     {
-        $this->value = $value;
-        $this->type  = $type;
+        $this->value  = $value;
+        $this->type   = $type;
+        $this->isNull = $isNull;
     }
 
     /**
@@ -47,18 +62,20 @@ final class Param
 
     /**
      * Create an integer parameter (PDO::PARAM_INT = 1).
+     * Value stored as its string representation.
      */
     public static function int(int $value): self
     {
-        return new self($value, 1);
+        return new self((string) $value, 1);
     }
 
     /**
      * Create a boolean parameter (PDO::PARAM_BOOL = 5).
+     * Stored as "1" (true) or "0" (false).
      */
     public static function bool(bool $value): self
     {
-        return new self($value, 5);
+        return new self($value ? '1' : '0', 5);
     }
 
     /**
@@ -66,6 +83,6 @@ final class Param
      */
     public static function null(): self
     {
-        return new self(null, 0);
+        return new self('', 0, true);
     }
 }

@@ -53,14 +53,19 @@ final class ConnectionFactoryTest extends TestCase
 
         $this->expectException(ConnectionException::class);
 
-        ConnectionFactory::create([
-            'driver'   => 'ffi_mysql',
-            'host'     => '127.0.0.1',
-            'dbname'   => 'test',
-            'user'     => 'root',
-            'password' => '',
-            'ffi_lib'  => '/nonexistent/libmysqlclient.so.99',
-        ]);
+        // Set an env var pointing to a non-existent library to force FFI::cdef() fallback failure
+        putenv('FFI_MYSQL_LIB=/nonexistent/libmysqlclient.so.99');
+        try {
+            ConnectionFactory::create([
+                'driver'   => 'ffi_mysql',
+                'host'     => '127.0.0.1',
+                'dbname'   => 'test',
+                'user'     => 'root',
+                'password' => '',
+            ]);
+        } finally {
+            putenv('FFI_MYSQL_LIB');
+        }
     }
 
     public function testFfiDriverSkippedWhenFfiNotLoaded(): void

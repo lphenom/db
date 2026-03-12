@@ -7,7 +7,10 @@ RUN apk add --no-cache \
     libzip-dev \
     sqlite-dev \
     oniguruma-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip
+    libffi-dev \
+    mariadb-connector-c-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite zip \
+    && echo "ffi.enable=true" > /usr/local/etc/php/conf.d/ffi.ini
 # Install Composer (pinned version 2.7.7)
 COPY --from=composer:2.7.7 /usr/bin/composer /usr/bin/composer
 WORKDIR /app

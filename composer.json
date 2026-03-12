@@ -24,6 +24,9 @@
         "ext-ffi": "Required for FfiMySqlConnection driver (KPHP compiled mode)"
     },
     "autoload": {
+        "files": [
+            "src/Driver/FfiMySqlHeader.php"
+        ],
         "psr-4": {
             "LPhenom\\Db\\": "src/"
         }

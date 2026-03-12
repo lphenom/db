@@ -64,7 +64,7 @@ final class SchemaMigrations
                 ':version'    => ParamBinder::str($version),
                 ':name'       => ParamBinder::str($name),
                 ':applied_at' => ParamBinder::str((new DateTimeImmutable())->format('Y-m-d H:i:s')),
-            ],
+            ]
         );
     }
 
@@ -75,7 +75,7 @@ final class SchemaMigrations
     {
         $this->conn->execute(
             'DELETE FROM ' . self::TABLE . ' WHERE version = :version',
-            [':version' => ParamBinder::str($version)],
+            [':version' => ParamBinder::str($version)]
         );
     }
 
@@ -87,7 +87,7 @@ final class SchemaMigrations
     public function getApplied(): array
     {
         $rows = $this->conn->query(
-            'SELECT version FROM ' . self::TABLE . ' ORDER BY version ASC',
+            'SELECT version FROM ' . self::TABLE . ' ORDER BY version ASC'
         )->fetchAll();
 
         $versions = [];

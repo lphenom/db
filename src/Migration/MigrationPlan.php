@@ -35,7 +35,7 @@ final class MigrationPlan
     public function __construct(
         string $version,
         string $name,
-        ?DateTimeImmutable $appliedAt = null,
+        ?DateTimeImmutable $appliedAt = null
     ) {
         $this->version   = $version;
         $this->name      = $name;

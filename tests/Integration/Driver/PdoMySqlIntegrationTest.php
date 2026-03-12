@@ -155,7 +155,7 @@ final class PdoMySqlIntegrationTest extends TestCase
                 $this->conn = $conn;
             }
 
-            public function execute(ConnectionInterface $conn): int|string|bool|float|null
+            public function execute(ConnectionInterface $conn): mixed
             {
                 $this->conn->execute(
                     'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
@@ -183,7 +183,7 @@ final class PdoMySqlIntegrationTest extends TestCase
                     $this->conn = $conn;
                 }
 
-                public function execute(ConnectionInterface $conn): int|string|bool|float|null
+                public function execute(ConnectionInterface $conn): mixed
                 {
                     $this->conn->execute(
                         'INSERT INTO inttest_users (name, email, score, active) VALUES (:name, :email, 0, 1)',
