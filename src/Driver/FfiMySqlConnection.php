@@ -135,7 +135,7 @@ int mysql_rollback(MYSQL *mysql);',
         );
 
         if ($connected === null) {
-            $error = FFI::string($ffi->mysql_error($handle));
+            $error = $this->ffiReadError($ffi->mysql_error($handle));
             $ffi->mysql_close($handle);
             throw new ConnectionException('MySQL FFI connect failed: ' . $error);
         }
@@ -196,14 +196,14 @@ int mysql_rollback(MYSQL *mysql);',
 
         if ($ret !== 0) {
             throw new QueryException(
-                'MySQL FFI query failed: ' . FFI::string($ffi->mysql_error($this->mysql)),
+                'MySQL FFI query failed: ' . $this->ffiReadError($ffi->mysql_error($this->mysql)),
                 (int) $ffi->mysql_errno($this->mysql)
             );
         }
 
         $res = $ffi->mysql_store_result($this->mysql);
         if ($res === null) {
-            $storeErr = FFI::string($ffi->mysql_error($this->mysql));
+            $storeErr = $this->ffiReadError($ffi->mysql_error($this->mysql));
             throw new QueryException('mysql_store_result() failed: ' . $storeErr);
         }
 
@@ -262,7 +262,7 @@ int mysql_rollback(MYSQL *mysql);',
 
         if ($ret !== 0) {
             throw new QueryException(
-                'MySQL FFI execute failed: ' . FFI::string($ffi->mysql_error($this->mysql)),
+                'MySQL FFI execute failed: ' . $this->ffiReadError($ffi->mysql_error($this->mysql)),
                 (int) $ffi->mysql_errno($this->mysql)
             );
         }
@@ -384,6 +384,24 @@ int mysql_rollback(MYSQL *mysql);',
         );
 
         $ffi->mysql_close($this->mysql);
+    }
+
+    /**
+     * Safely read a C string returned by mysql_error() (declared as "const char *").
+     *
+     * On PHP 8.2+, FFI functions returning "const char *" automatically yield a PHP string.
+     * On older PHP and under KPHP, they yield FFI\CData (char pointer).
+     * This helper handles both cases to avoid TypeError.
+     *
+     * @param mixed $ptr
+     */
+    private function ffiReadError(mixed $ptr): string
+    {
+        if (is_string($ptr)) {
+            return $ptr;
+        }
+
+        return \FFI::string($ptr);
     }
 
     /**

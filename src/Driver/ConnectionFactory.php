@@ -96,8 +96,19 @@ final class ConnectionFactory
     {
         if (!extension_loaded('ffi')) {
             throw new ConnectionException(
-                'ext-ffi is not loaded. FfiMySqlConnection requires the FFI PHP extension.',
+                'ext-ffi is not loaded. FfiMySqlConnection requires the FFI PHP extension.'
             );
+        }
+
+        // If FFI_MYSQL_LIB env var is set, validate the path exists before attempting FFI load.
+        // This allows tests and CI to force a "library missing" scenario deterministically.
+        $libOverride = getenv('FFI_MYSQL_LIB');
+        if ($libOverride !== false && $libOverride !== '') {
+            if (!file_exists($libOverride)) {
+                throw new ConnectionException(
+                    sprintf('MySQL FFI library not found: %s', $libOverride)
+                );
+            }
         }
 
         $host     = isset($config['host']) ? (string) $config['host'] : '127.0.0.1';
@@ -106,6 +117,14 @@ final class ConnectionFactory
         $user     = isset($config['user']) ? (string) $config['user'] : '';
         $password = isset($config['password']) ? (string) $config['password'] : '';
 
-        return new FfiMySqlConnection($host, $user, $password, $dbname, $port);
+        try {
+            return new FfiMySqlConnection($host, $user, $password, $dbname, $port);
+        } catch (ConnectionException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new ConnectionException(
+                'FfiMySqlConnection failed: ' . $e->getMessage()
+            );
+        }
     }
 }
