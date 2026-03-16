@@ -1,6 +1,7 @@
 {
     "name": "lphenom/db",
     "description": "LPhenom database layer — raw SQL, repository pattern, PDO driver, migration contracts",
+    "version": "0.1.0",
     "type": "library",
     "license": "MIT",
     "authors": [

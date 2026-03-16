@@ -1,28 +1,20 @@
-# Security Policy
+# Политика безопасности
 
-## Supported Versions
+## Поддерживаемые версии
 
-| Version | Supported          |
-|---------|--------------------|
-| 0.1.x   | :white_check_mark: |
+| Версия | Поддержка |
+|--------|-----------|
+| 0.x    | ✅         |
 
-## Reporting a Vulnerability
+## Сообщить об уязвимости
 
-If you discover a security vulnerability, **do not open a public issue**.
+Пожалуйста, **не** создавайте публичный GitHub Issue для уязвимостей безопасности.
 
-Please report it by emailing: **popkovd.o@yandex.ru**
+Отправьте подробный отчёт на **popkovd.o@yandex.ru**, указав:
 
-Include:
-- Description of the vulnerability
-- Steps to reproduce
-- Potential impact
-- Suggested fix (if any)
+- Описание уязвимости
+- Шаги для воспроизведения
+- Затронутые версии
+- Предлагаемое исправление (опционально)
 
-You will receive a response within **72 hours**. We will work with you to understand and address the issue promptly.
-
-## Security Best Practices
-
-- Never put credentials in source code.
-- Use environment variables for DSN, username, password.
-- All SQL parameters must be bound via `ParamBinder` — never interpolated.
-
+Мы стремимся ответить в течение **72 часов** и выпустить патч в течение **7 дней** для подтверждённых проблем.

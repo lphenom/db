@@ -4,35 +4,35 @@
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)](https://php.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**LPhenom Database Layer** — raw SQL, repository pattern, PDO driver, migration contracts.
+**LPhenom Database Layer** — сырой SQL, паттерн репозитория, PDO-драйвер, контракты миграций.
 
-Part of the [LPhenom](https://github.com/lphenom) PHP framework ecosystem — compatible with PHP 8.1+ and KPHP compilation.
-
----
-
-## Features
-
-- 🔌 `ConnectionInterface` / `ResultInterface` — clean contracts
-- 🛡 Safe parameter binding (`int`, `string`, `bool`, `null`, `float`)
-- 🗄 `PdoMySqlConnection` — PDO MySQL driver for shared hosting
-- ⚡ `FfiMySqlConnection` — KPHP FFI MySQL driver (libmysqlclient, compiled mode)
-- 🔀 `ConnectionFactory` — single config-driven driver selection (`pdo_mysql` | `ffi_mysql`)
-- 📁 `AbstractRepository` + DTO pattern (no ORM magic)
-- 🔄 `MigrationInterface` + `SchemaMigrations` helper
-- ✅ Unit tests (SQLite in-memory) + Integration tests (real MySQL)
-- 🐳 Docker dev environment (PHP 8.1-alpine, MySQL 8.0.36)
+Часть экосистемы PHP-фреймворка [LPhenom](https://github.com/lphenom) — совместим с PHP 8.1+ и KPHP-компиляцией.
 
 ---
 
-## Requirements
+## Возможности
+
+- 🔌 `ConnectionInterface` / `ResultInterface` — чистые контракты
+- 🛡 Типобезопасная привязка параметров (`int`, `string`, `bool`, `null`, `float`)
+- 🗄 `PdoMySqlConnection` — PDO MySQL-драйвер для shared hosting
+- ⚡ `FfiMySqlConnection` — KPHP FFI MySQL-драйвер (libmysqlclient, compiled mode)
+- 🔀 `ConnectionFactory` — единый конфигурируемый выбор драйвера (`pdo_mysql` | `ffi_mysql`)
+- 📁 `AbstractRepository` + паттерн DTO (без ORM-магии)
+- 🔄 `MigrationInterface` + вспомогательный класс `SchemaMigrations`
+- ✅ Unit-тесты (SQLite in-memory) + интеграционные тесты (реальный MySQL)
+- 🐳 Docker dev-окружение (PHP 8.1-alpine, MySQL 8.0.36)
+
+---
+
+## Требования
 
 - PHP >= 8.1
-- `ext-pdo` + `ext-pdo_mysql` — for `PdoMySqlConnection` (shared hosting / standard PHP)
-- `ext-ffi` + `libmysqlclient` — for `FfiMySqlConnection` (KPHP compiled mode)
+- `ext-pdo` + `ext-pdo_mysql` — для `PdoMySqlConnection` (shared hosting / обычный PHP)
+- `ext-ffi` + `libmysqlclient` — для `FfiMySqlConnection` (KPHP compiled mode)
 
 ---
 
-## Installation
+## Установка
 
 ```bash
 composer require lphenom/db
@@ -40,7 +40,7 @@ composer require lphenom/db
 
 ---
 
-## Quick Start
+## Быстрый старт
 
 ```php
 use LPhenom\Db\Driver\PdoMySqlConnection;
@@ -61,29 +61,31 @@ $user = $result->fetchOne();
 
 ---
 
-## Development
+## Разработка
 
 ```bash
 git clone git@github.com:lphenom/db.git
 cd db
-make up                  # start Docker (PHP 8.1-alpine + MySQL 8.0.36)
-make test-unit           # run unit tests (no real DB needed)
-make test-integration    # run integration tests against MySQL
-make lint                # run php-cs-fixer check
-make phpstan             # run PHPStan
-make down                # stop Docker
+make up                  # запустить Docker (PHP 8.1-alpine + MySQL 8.0.36)
+make test-unit           # запустить unit-тесты (без реальной БД)
+make test-integration    # запустить интеграционные тесты с MySQL
+make lint                # проверить стиль кода (php-cs-fixer)
+make phpstan             # запустить PHPStan
+make down                # остановить Docker
 ```
 
 ---
 
-## Documentation
+## Документация
 
-- [Repository Pattern Guidelines](docs/repositories.md)
-- [Migration Contracts](docs/migrations.md)
-- [Drivers & ConnectionFactory (PDO vs FFI)](docs/drivers.md)
+- [Паттерн репозитория](docs/repositories.md)
+- [Контракты миграций](docs/migrations.md)
+- [Драйверы и ConnectionFactory (PDO vs FFI)](docs/drivers.md)
+- [Совместимость с KPHP](docs/kphp-compatibility.md)
+- [Build-targets (@lphenom-build)](docs/build-targets.md)
 
 ---
 
-## License
+## Лицензия
 
 [MIT](LICENSE) © 2026 LPhenom Contributors

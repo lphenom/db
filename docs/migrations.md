@@ -1,15 +1,16 @@
-# Migration Contracts
+# Миграции
 
-## Overview
+## Обзор
 
-`lphenom/db` provides **contracts only** — the migration runner (CLI tool) is a separate package.
-This package defines the interfaces and the `schema_migrations` tracking table helper.
+`lphenom/db` предоставляет **только контракты** — CLI-инструмент для запуска миграций реализован
+в отдельном пакете. Данный пакет определяет интерфейсы и вспомогательный класс
+для таблицы отслеживания `schema_migrations`.
 
 ---
 
 ## MigrationInterface
 
-Every migration must implement:
+Каждая миграция должна реализовывать:
 
 ```php
 interface MigrationInterface
@@ -20,13 +21,13 @@ interface MigrationInterface
 }
 ```
 
-- `up()` — apply the migration (CREATE TABLE, ALTER TABLE, INSERT seed data, etc.)
-- `down()` — revert it (DROP TABLE, DROP COLUMN, etc.)
-- `getVersion()` — returns a string identifier, conventionally a timestamp: `"20260101120000"`
+- `up()` — применяет миграцию (CREATE TABLE, ALTER TABLE, INSERT seed data и т.д.)
+- `down()` — откатывает её (DROP TABLE, DROP COLUMN и т.д.)
+- `getVersion()` — возвращает строковый идентификатор, по соглашению — временну́ю метку: `"20260101120000"`
 
 ---
 
-## Example Migration
+## Пример миграции
 
 ```php
 final class CreateUsersTable implements MigrationInterface
@@ -58,15 +59,15 @@ final class CreateUsersTable implements MigrationInterface
 
 ---
 
-## MigrationPlan DTO
+## DTO MigrationPlan
 
-`MigrationPlan` is an immutable DTO used by migration tools to track state:
+`MigrationPlan` — иммутабельный DTO, используемый инструментами миграций для отслеживания состояния:
 
 ```php
 $plan = new MigrationPlan(
     version:   '20260101120000',
     name:      'CreateUsersTable',
-    appliedAt: null,                // null = not yet applied
+    appliedAt: null,                // null = ещё не применена
 );
 
 $applied = $plan->withAppliedAt(new \DateTimeImmutable());
@@ -75,27 +76,27 @@ $applied->isApplied(); // true
 
 ---
 
-## SchemaMigrations Helper
+## Вспомогательный класс SchemaMigrations
 
-`SchemaMigrations` manages the `schema_migrations` tracking table:
+`SchemaMigrations` управляет таблицей отслеживания `schema_migrations`:
 
 ```php
 $schema = new SchemaMigrations($conn);
 
-// Ensure the tracking table exists (idempotent)
+// Убедиться, что таблица отслеживания существует (идемпотентно)
 $schema->ensureTable();
 
-// Mark a migration as applied
+// Отметить миграцию как применённую
 $schema->markApplied('20260101120000', 'CreateUsersTable');
 
-// Get all applied versions in ascending order
+// Получить все применённые версии в порядке возрастания
 $versions = $schema->getApplied(); // ['20260101120000', ...]
 
-// Revert: remove a version record
+// Откат: удалить запись версии
 $schema->markReverted('20260101120000');
 ```
 
-### schema_migrations table DDL
+### DDL таблицы schema_migrations
 
 ```sql
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -107,38 +108,37 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 ---
 
-## How the Migration Tool Will Work
+## Как будет работать инструмент миграций
 
-> The CLI runner is implemented in a separate `lphenom/migrate` package.
+> CLI-runner будет реализован в отдельном пакете `lphenom/migrate`.
 
-Expected flow:
+Ожидаемый сценарий:
 
-1. **Discover** migration classes (registered explicitly — no filesystem scanning).
-2. **Compare** discovered versions against `schema_migrations.getApplied()`.
-3. **Plan** which migrations to run (`up` for pending, `down` for rollback).
-4. **Execute** each migration inside a transaction where possible.
-5. **Record** applied/reverted versions via `SchemaMigrations`.
+1. **Обнаружение** классов миграций (регистрируются явно — без сканирования файловой системы).
+2. **Сравнение** обнаруженных версий с `schema_migrations.getApplied()`.
+3. **Планирование** — какие миграции запустить (`up` для новых, `down` для отката).
+4. **Выполнение** каждой миграции внутри транзакции (где возможно).
+5. **Запись** применённых/откатанных версий через `SchemaMigrations`.
 
 ---
 
-## Development Commands
+## Команды разработки
 
 ```bash
-# Start environment
+# Запуск окружения
 make up
 
-# Run tests (includes SchemaMigrations tests using SQLite in-memory)
+# Запуск тестов (включая тесты SchemaMigrations на SQLite in-memory)
 make test
 
-# Check code style
+# Проверка стиля кода
 make lint
 ```
 
 ---
 
-## KPHP Compatibility
+## Совместимость с KPHP
 
-- Migration classes must be registered **explicitly** — no directory scanning or reflection.
-- All DDL SQL is plain strings — no query builder.
-- `SchemaMigrations` uses `ParamBinder` for all bound values.
-
+- Классы миграций должны регистрироваться **явно** — никакого сканирования директорий и Reflection.
+- Весь DDL-SQL — обычные строки, без query builder.
+- `SchemaMigrations` использует `ParamBinder` для всех привязанных значений.

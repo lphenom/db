@@ -1,42 +1,42 @@
-# KPHP Compatibility — lphenom/db
+# Совместимость с KPHP — lphenom/db
 
-This document describes all KPHP-specific rules applied in the `lphenom/db` package
-and explains every design decision made for KPHP compatibility.
-
----
-
-## Overview
-
-`lphenom/db` is designed to work in **two modes**:
-
-| Mode | Runtime | Driver |
-|------|---------|--------|
-| PHP 8.1+ shared hosting | `ext-pdo_mysql` | `PdoMySqlConnection` |
-| KPHP compiled binary | `FFI` + `libmysqlclient` | `FfiMySqlConnection` |
-
-The same repository code works in both modes — only the driver changes.
+В этом документе описаны все KPHP-специфичные правила, применяемые в пакете `lphenom/db`,
+и объяснены решения по проектированию, принятые для обеспечения совместимости с KPHP.
 
 ---
 
-## Applied KPHP rules (per file)
+## Обзор
+
+`lphenom/db` спроектирован для работы в **двух режимах**:
+
+| Режим                      | Runtime             | Драйвер               |
+|----------------------------|---------------------|-----------------------|
+| PHP 8.1+ shared hosting    | `ext-pdo_mysql`     | `PdoMySqlConnection`  |
+| KPHP compiled binary       | `FFI` + `libmysqlclient` | `FfiMySqlConnection` |
+
+Один и тот же код репозиториев работает в обоих режимах — меняется только драйвер.
+
+---
+
+## Применённые правила KPHP (по файлам)
 
 ### `src/Contract/ConnectionInterface.php`
 
-**Rule: no `callable` in method signatures**
+**Правило: нет `callable` в сигнатурах методов**
 
-KPHP cannot store or pass `callable` in typed contexts.
+KPHP не может хранить или передавать `callable` в типизированных контекстах.
 
 ```php
-// ❌ FORBIDDEN
+// ❌ ЗАПРЕЩЕНО
 public function transaction(callable $callback): mixed;
 
-// ✅ CORRECT
-public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null;
+// ✅ ПРАВИЛЬНО
+public function transaction(TransactionCallbackInterface $callback): mixed;
 ```
 
 ### `src/Contract/TransactionCallbackInterface.php`
 
-Replaces `callable` for transactions. Implement this interface instead of using closures:
+Заменяет `callable` для транзакций. Реализуйте этот интерфейс вместо замыканий:
 
 ```php
 $conn->transaction(new class ($data) implements TransactionCallbackInterface {
@@ -46,7 +46,7 @@ $conn->transaction(new class ($data) implements TransactionCallbackInterface {
     /** @param array<string, mixed> $data */
     public function __construct(array $data) { $this->data = $data; }
 
-    public function execute(ConnectionInterface $conn): int|string|bool|float|null
+    public function execute(ConnectionInterface $conn): mixed
     {
         return $conn->execute('INSERT INTO ...', [':name' => ParamBinder::str($this->data['name'])]);
     }
@@ -55,23 +55,23 @@ $conn->transaction(new class ($data) implements TransactionCallbackInterface {
 
 ### `src/Param/Param.php`
 
-**Rule: no constructor property promotion with `readonly`**
+**Правило: нет constructor property promotion с `readonly`**
 
 ```php
-// ❌ FORBIDDEN in KPHP
+// ❌ ЗАПРЕЩЕНО в KPHP
 final class Param {
     public function __construct(
-        public readonly int|string|bool|float|null $value,
+        public readonly mixed $value,
         public readonly int $type,
     ) {}
 }
 
-// ✅ CORRECT
+// ✅ ПРАВИЛЬНО
 final class Param {
-    public int|string|bool|float|null $value;
+    public mixed $value;
     public int $type;
 
-    public function __construct(int|string|bool|float|null $value, int $type) {
+    public function __construct(mixed $value, int $type) {
         $this->value = $value;
         $this->type  = $type;
     }
@@ -80,24 +80,24 @@ final class Param {
 
 ### `src/Driver/PdoMySqlConnection.php`
 
-**Rule: no `callable`, no `try/finally` without `catch`**
+**Правило: нет `callable`, нет `try/finally` без `catch`**
 
-Transaction pattern:
+Паттерн транзакции:
 ```php
-// ❌ FORBIDDEN
+// ❌ ЗАПРЕЩЕНО
 public function transaction(callable $callback): mixed {
     $this->pdo->beginTransaction();
     try {
         $result = $callback($this);
         $this->pdo->commit();
         return $result;
-    } finally {               // ❌ try/finally without catch is forbidden
+    } finally {               // ❌ try/finally без catch — запрещено
         $this->pdo->rollBack();
     }
 }
 
-// ✅ CORRECT
-public function transaction(TransactionCallbackInterface $callback): int|string|bool|float|null {
+// ✅ ПРАВИЛЬНО
+public function transaction(TransactionCallbackInterface $callback): mixed {
     $this->pdo->beginTransaction();
     $exception = null;
     $result = null;
@@ -115,20 +115,20 @@ public function transaction(TransactionCallbackInterface $callback): int|string|
 }
 ```
 
-**Note:** PDO is NOT available in KPHP runtime. `PdoMySqlConnection` is used only in
-PHP mode (shared hosting). The KPHP driver is `FfiMySqlConnection`.
+**Замечание:** PDO **недоступен** в KPHP runtime. `PdoMySqlConnection` используется только
+в PHP-режиме (shared hosting). KPHP-драйвер — `FfiMySqlConnection`.
 
 ### `src/Driver/FfiMySqlConnection.php`
 
-**Rules applied:**
-1. No constructor property promotion / `readonly`
-2. No `callable` — uses `TransactionCallbackInterface`
-3. No `try/finally` without `catch` — autocommit restore happens after catch block
-4. `FFI\Exception` caught explicitly (extends `\Error` on PHP 8.x)
+**Применённые правила:**
+1. Нет constructor property promotion / `readonly`
+2. Нет `callable` — используется `TransactionCallbackInterface`
+3. Нет `try/finally` без `catch` — восстановление autocommit происходит после блока catch
+4. `FFI\Exception` перехватывается явно (наследует `\Error` в PHP 8.x)
 
 ```php
-// FFI\Exception hierarchy: FFI\Exception extends \Error (PHP 8.x)
-// Catch order: most specific first
+// Иерархия FFI\Exception: FFI.Exception extends \Error (PHP 8.x)
+// Порядок catch: наиболее специфичные — первыми
 try {
     $this->ffi = FFI::cdef(self::C_HEADER, $libPath);
 } catch (\FFI\Exception $e) {
@@ -143,90 +143,90 @@ if ($ffiException !== null) {
 }
 ```
 
-**How KPHP uses FFI:**
+**Как KPHP использует FFI:**
 
-KPHP reads `FFI::cdef(string $header, string $lib)` **at compile time**.
-The C declarations are parsed statically and compiled into native C++ calls.
-The resulting binary links against `libmysqlclient` directly — no `dlopen` overhead.
+KPHP читает `FFI::cdef(string $header, string $lib)` **во время компиляции**.
+C-объявления разбираются статически и компилируются в нативные C++ вызовы.
+Результирующий бинарник линкуется с `libmysqlclient` напрямую — без накладных расходов `dlopen`.
 
-Requirements for KPHP FFI:
-- `FFI::cdef()` must receive **string literals** (not dynamic strings)
-- The C header must be complete and valid
-- Library path must be known at compile time (or passed via config)
+Требования к KPHP FFI:
+- `FFI::cdef()` должен получать **строковые литералы** (не динамические строки)
+- C-заголовок должен быть полным и корректным
+- Путь к библиотеке должен быть известен на этапе компиляции (или передаваться через конфиг)
 
 ### `src/Repository/AbstractRepository.php`
 
-**Rule: no `object` return type (not supported in KPHP)**
+**Правило: нет возвращаемого типа `object` (не поддерживается в KPHP)**
 
 ```php
-// ❌ FORBIDDEN
+// ❌ ЗАПРЕЩЕНО
 abstract protected function fromRow(array $row): object;
 
-// ✅ CORRECT — use mixed, override with concrete type in subclass
+// ✅ ПРАВИЛЬНО — используйте mixed, переопределяйте с конкретным типом в подклассе
 abstract protected function fromRow(array $row): mixed;
 ```
 
 ### `src/Migration/MigrationPlan.php`
 
-**Rule: no constructor property promotion / `readonly`**
+**Правило: нет constructor property promotion / `readonly`**
 
-`MigrationPlan` fields are `public` (not `readonly`) for KPHP compatibility.
+Поля `MigrationPlan` публичные (не `readonly`) для совместимости с KPHP.
 
 ---
 
 ## KPHP entrypoint
 
-KPHP does not support Composer PSR-4 autoloading. Use `build/kphp-entrypoint.php`:
+KPHP не поддерживает Composer PSR-4 autoloading. Используйте `build/kphp-entrypoint.php`:
 
 ```bash
 kphp -d /build/kphp-out -M cli /build/build/kphp-entrypoint.php
 ```
 
-File order in entrypoint (interfaces and exceptions before classes):
+Порядок файлов в entrypoint (интерфейсы и исключения — раньше классов):
 1. `ResultInterface`, `ConnectionInterface`, `TransactionCallbackInterface`
-2. All exceptions
+2. Все исключения
 3. `Param`, `ParamBinder`
 4. `MigrationInterface`, `MigrationPlan`, `SchemaMigrations`
 5. `AbstractRepository`
-6. `FfiMySqlResult`, `FfiMySqlConnection`, `FfiConnectionStub`, `ConnectionFactory`
+6. `FfiMySqlResult`, `FfiMySqlConnection`, `ConnectionFactory`
 
-**Note:** `PdoMySqlConnection` and `PdoResult` are **not** included in the KPHP entrypoint
-because PDO is unavailable in KPHP runtime.
+**Замечание:** `PdoMySqlConnection` и `PdoResult` **не** включены в KPHP entrypoint,
+так как PDO недоступен в KPHP runtime.
 
 ---
 
-## KPHP build verification
+## Проверка KPHP-сборки
 
 ```bash
-# Builds both KPHP binary and PHAR, verifies both work
+# Собирает KPHP binary и PHAR, проверяет оба
 make kphp-check
-# or directly:
+# или напрямую:
 docker build -f Dockerfile.check -t lphenom-db-check .
 ```
 
-`Dockerfile.check` has two stages:
-- **`kphp-build`** — compiles via `vkcom/kphp`, runs the binary
-- **`phar-build`** — builds PHAR with PHP 8.1, smoke-tests it
+`Dockerfile.check` содержит две стадии:
+- **`kphp-build`** — компилирует через `vkcom/kphp`, запускает бинарник
+- **`phar-build`** — собирает PHAR через PHP 8.1, smoke-тест
 
-Both must exit 0 for the check to pass.
-
----
-
-## Forbidden constructs summary
-
-| Construct | File(s) | Replacement |
-|-----------|---------|-------------|
-| `callable` parameter type | `ConnectionInterface`, all drivers | `TransactionCallbackInterface` |
-| Constructor property promotion (`private readonly`) | All value objects, drivers | Explicit `private $prop` + assignment in body |
-| `readonly` properties | `Param`, `MigrationPlan`, `AbstractRepository` | Regular mutable properties |
-| `try { } finally { }` without `catch` | `FfiMySqlConnection::transaction()` | Store exception, check after block |
-| `object` return type | `AbstractRepository::fromRow()` | `mixed` |
-| `str_starts_with()`, `str_ends_with()`, `str_contains()` | — | `substr()` / `strpos()` |
-| `FFI\Exception` not caught explicitly | `FfiMySqlConnection::__construct()` | Explicit `catch (\FFI\Exception $e)` |
+Обе стадии должны завершиться с кодом 0.
 
 ---
 
-## References
+## Сводка запрещённых конструкций
+
+| Конструкция                                             | Файл(ы)                                      | Замена                         |
+|---------------------------------------------------------|----------------------------------------------|--------------------------------|
+| `callable` как тип параметра                            | `ConnectionInterface`, все драйверы          | `TransactionCallbackInterface` |
+| Constructor property promotion (`private readonly`)     | Все value objects, драйверы                  | Явное `private $prop` + присваивание в теле |
+| `readonly` свойства                                     | `Param`, `MigrationPlan`, `AbstractRepository` | Обычные изменяемые свойства  |
+| `try { } finally { }` без `catch`                       | `FfiMySqlConnection::transaction()`          | Сохранить исключение, проверить после блока |
+| Возвращаемый тип `object`                               | `AbstractRepository::fromRow()`              | `mixed`                        |
+| `str_starts_with()`, `str_ends_with()`, `str_contains()` | —                                           | `substr()` / `strpos()`        |
+| `FFI\Exception` не перехватывается явно                 | `FfiMySqlConnection::__construct()`          | Явный `catch (\FFI\Exception $e)` |
+
+---
+
+## Ссылки
 
 - [KPHP vs PHP differences](https://vkcom.github.io/kphp/kphp-language/kphp-vs-php/whats-the-difference.html)
 - [KPHP FFI documentation](https://vkcom.github.io/kphp/kphp-language/howto-convert/ffi.html)

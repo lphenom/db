@@ -1,70 +1,73 @@
-# Contributing to lphenom/db
+# Участие в разработке lphenom/db
 
-Thank you for your interest in contributing! Please follow these guidelines.
+Спасибо за интерес к проекту! 🎉
 
-## Code of Conduct
-
-Be respectful and constructive in all interactions.
-
-## Requirements
+## Требования
 
 - PHP >= 8.1
-- Docker + Docker Compose (for local dev environment)
+- Docker + Docker Compose (для запуска тестов с сервисами)
+- Composer
 
-## Getting Started
+## Настройка окружения
 
 ```bash
 git clone git@github.com:lphenom/db.git
 cd db
-make up          # start Docker environment
-make test        # run tests inside container
-make lint        # run php-cs-fixer check inside container
+composer install
+
+# Запуск тестов
+make test
 ```
 
-## Code Style
+## Стиль кода
 
-- PSR-12 coding standard
-- `declare(strict_types=1);` in every PHP file
-- No `reflection`, `eval`, `variable variables`, `dynamic class loading`
-- Strict types everywhere — no loose comparisons
+PSR-12. Автоисправление:
 
-Run the linter before committing:
+```bash
+make lint-fix
+```
+
+Проверка:
+
 ```bash
 make lint
 ```
 
-## Testing
+## Статический анализ
 
-All new code must be covered by unit tests:
 ```bash
-make test
+make analyse   # PHPStan level 8
 ```
 
-## Commit Messages
+## Совместимость с KPHP
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
+Весь код **обязан** оставаться KPHP-совместимым. Правила:
+
+- Нет constructor property promotion (`__construct(private $x)`)
+- Нет `readonly` свойств
+- Нет `Reflection`, `eval()`, `$$var`, `new $className()`
+- Нет `str_starts_with`, `str_ends_with`, `str_contains` — используйте `substr`/`strpos`
+- `try/catch` всегда с явным `catch`
+- Нет `callable` в типизированных массивах
+
+## Сообщения коммитов
+
+Следуйте [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-feat(db): add new feature
-fix(db): fix a bug
-test(db): add or fix tests
-docs(db): update documentation
-chore: update tooling / CI
-refactor(db): refactor without feature change
+feat(db): добавить поддержку TTL
+fix(db): исправить обработку пустого ключа
+test(db): добавить интеграционный тест
 ```
 
-Keep commits **small and focused**. One logical change per commit.
+## Чеклист Pull Request
 
-## Pull Request Process
+- [ ] Тесты проходят: `make test`
+- [ ] Нет ошибок линтера: `make lint`
+- [ ] PHPStan проходит: `make analyse`
+- [ ] KPHP-совместимо (нет запрещённых конструкций)
+- [ ] Документация обновлена при изменении публичного API
 
-1. Fork the repository.
-2. Create a feature branch: `git checkout -b feat/my-feature`
-3. Make your changes with tests.
-4. Ensure CI passes: lint, PHPStan, PHPUnit.
-5. Open a Pull Request against `main`.
-6. Wait for review.
+## Лицензия
 
-## Versioning
-
-This project uses [SemVer](https://semver.org/). Do not bump versions manually — maintainers handle releases.
-
+Участвуя в проекте, вы соглашаетесь, что ваши изменения будут лицензированы под [MIT License](LICENSE).

@@ -1,9 +1,10 @@
-# Repository Pattern Guidelines
+# Репозитории
 
-## Rule: All SQL lives in repositories
+## Правило: весь SQL — в репозиториях
 
-All database queries **must** be written inside repository classes that extend `AbstractRepository`.
-No SQL is allowed in controllers, services, or domain models.
+Все запросы к базе данных **должны** быть написаны внутри классов-репозиториев,
+расширяющих `AbstractRepository`.
+SQL запрещён в контроллерах, сервисах и доменных моделях.
 
 ---
 
@@ -19,7 +20,7 @@ abstract class AbstractRepository
         $this->connection = $connection;
     }
 
-    // KPHP note: return type is `mixed` (not `object`) — override with concrete type in subclass
+    // Замечание KPHP: возвращаемый тип `mixed` (не `object`) — переопределяйте с конкретным типом в подклассе
     abstract protected function fromRow(array $row): mixed;
 
     protected function fetchOne(string $sql, array $params = []): mixed;
@@ -34,15 +35,15 @@ abstract class AbstractRepository
 
 ---
 
-## DTO Rules
+## Правила DTO
 
-- DTOs are plain value-objects — **no business logic**.
-- KPHP note: **no `readonly` properties**, **no constructor property promotion**.
-- DTOs have a static `fromRow(array $row): self` factory method.
-- Never inject services into DTOs.
-- All type casts must be explicit: `(int)`, `(string)`, `(bool)`, `(float)`.
+- DTO — простые объекты-значения, **без бизнес-логики**.
+- Замечание KPHP: **запрещено** constructor property promotion и `readonly` свойства.
+- У DTO есть статический фабричный метод `fromRow(array $row): self`.
+- Никогда не внедряйте сервисы в DTO.
+- Все приведения типов должны быть явными: `(int)`, `(string)`, `(bool)`, `(float)`.
 
-### Example DTO (KPHP-compatible)
+### Пример DTO (KPHP-совместимый)
 
 ```php
 final class UserDto
@@ -79,7 +80,7 @@ final class UserDto
 
 ---
 
-## Example Repository (KPHP-compatible)
+## Пример репозитория (KPHP-совместимый)
 
 ```php
 final class UserRepository extends AbstractRepository
@@ -140,33 +141,33 @@ final class UserRepository extends AbstractRepository
 
 ---
 
-## Parameter Binding
+## Привязка параметров
 
-Always use `ParamBinder` — **never interpolate** values into SQL strings.
+Всегда используйте `ParamBinder` — **никогда** не интерполируйте значения напрямую в SQL.
 
-| Method                    | PDO Type          | Notes                                     |
-|---------------------------|-------------------|-------------------------------------------|
-| `ParamBinder::int($v)`    | `PDO::PARAM_INT`  |                                           |
-| `ParamBinder::str($v)`    | `PDO::PARAM_STR`  |                                           |
-| `ParamBinder::bool($v)`   | `PDO::PARAM_BOOL` |                                           |
-| `ParamBinder::null()`     | `PDO::PARAM_NULL` |                                           |
-| `ParamBinder::float($v)`  | `PDO::PARAM_STR`  | PDO has no PARAM_FLOAT; stored as string  |
+ Метод                      | Тип PDO            | Примечания
+-----------------------------|--------------------|------------------------------------------------
+ `ParamBinder::int($v)`      | `PDO::PARAM_INT`   |
+ `ParamBinder::str($v)`      | `PDO::PARAM_STR`   |
+ `ParamBinder::bool($v)`     | `PDO::PARAM_BOOL`  |
+ `ParamBinder::null()`       | `PDO::PARAM_NULL`  |
+ `ParamBinder::float($v)`    | `PDO::PARAM_STR`   | PDO не имеет PARAM_FLOAT; хранится как строка
 
 ---
 
-## Transactions
+## Транзакции
 
-KPHP does not support `callable` as a parameter type.  
-Always use `TransactionCallbackInterface` — **not** closures.
+KPHP не поддерживает `callable` как тип параметра.
+Всегда используйте `TransactionCallbackInterface` — **не** замыкания.
 
 ```php
 use LPhenom\Db\Contract\ConnectionInterface;
 use LPhenom\Db\Contract\TransactionCallbackInterface;
 
-// ❌ FORBIDDEN (not KPHP-compatible)
+// ❌ ЗАПРЕЩЕНО (несовместимо с KPHP)
 // $conn->transaction(function (ConnectionInterface $conn) use ($data): void { ... });
 
-// ✅ CORRECT (KPHP-compatible)
+// ✅ ПРАВИЛЬНО (KPHP-совместимо)
 $conn->transaction(new class ($userRepo, $orderRepo) implements TransactionCallbackInterface {
     /** @var UserRepository */
     private UserRepository $userRepo;
@@ -175,42 +176,42 @@ $conn->transaction(new class ($userRepo, $orderRepo) implements TransactionCallb
 
     public function __construct(UserRepository $u, OrderRepository $o)
     {
-        $this->userRepo   = $u;
-        $this->orderRepo  = $o;
+        $this->userRepo  = $u;
+        $this->orderRepo = $o;
     }
 
-    public function execute(ConnectionInterface $conn): int|string|bool|float|null
+    public function execute(ConnectionInterface $conn): mixed
     {
         $this->userRepo->save(1, 'Alice', 'alice@example.com');
         $this->orderRepo->createFor(1);
         return null;
-        // Automatically committed; rolled back on any exception
+        // При успехе — автоматический commit; при любом исключении — rollback
     }
 });
 ```
 
 ---
 
-## KPHP Compatibility Checklist
+## Чеклист совместимости с KPHP
 
-| Rule | Status |
-|------|--------|
-| No `reflection`, `eval`, `variable variables` | ✅ |
-| No dynamic method calls (`$method()`) | ✅ |
-| No `callable` / `Closure` as parameter type | ✅ Use `TransactionCallbackInterface` |
-| No constructor property promotion (`__construct(private T $x)`) | ✅ Explicit properties |
-| No `readonly` properties | ✅ |
-| `fromRow()` returns `mixed` (not `object`) | ✅ |
-| All type casts explicit: `(int)`, `(string)`, `(bool)` | ✅ |
-| `str_starts_with()`, `str_ends_with()`, `str_contains()` — **forbidden** | Use `strpos()` / `substr()` |
-| `try/finally` without `catch` — **forbidden** | Add `catch (\Throwable $e)` |
+ Правило                                                                          | Статус
+----------------------------------------------------------------------------------|-------
+ Нет `reflection`, `eval`, `variable variables`                                   | ✅
+ Нет динамических вызовов методов (`$method()`)                                   | ✅
+ Нет `callable` / `Closure` как типа параметра                                    | ✅ используйте `TransactionCallbackInterface`
+ Нет constructor property promotion (`__construct(private T $x)`)                 | ✅ явные свойства
+ Нет `readonly` свойств                                                           | ✅
+ `fromRow()` возвращает `mixed` (не `object`)                                     | ✅
+ Все приведения типов явные: `(int)`, `(string)`, `(bool)`                        | ✅
+ `str_starts_with()`, `str_ends_with()`, `str_contains()` — **запрещены**         | используйте `strpos()` / `substr()`
+ `try/finally` без `catch` — **запрещено**                                        | добавьте `catch (\Throwable $e)`
 
 ---
 
-## Driver Selection
+## Выбор драйвера
 
-Repositories depend only on `ConnectionInterface`. The concrete driver is chosen **once**
-at application bootstrap via `ConnectionFactory`:
+Репозитории зависят только от `ConnectionInterface`. Конкретный драйвер выбирается **один раз**
+при старте приложения через `ConnectionFactory`:
 
 ```php
 use LPhenom\Db\Driver\ConnectionFactory;
@@ -224,14 +225,13 @@ $conn = ConnectionFactory::create([
     'password' => getenv('DB_PASSWORD') ?: '',
 ]);
 
-// Same repository works with both drivers:
+// Один и тот же репозиторий работает с обоими драйверами:
 $repo = new UserRepository($conn);
 ```
 
-| Driver      | Environment                    | Requires                         |
-|-------------|-------------------------------|----------------------------------|
-| `pdo_mysql` | Shared hosting / standard PHP  | `ext-pdo_mysql`                  |
-| `ffi_mysql` | KPHP compiled binary           | `ext-ffi` + `libmysqlclient`     |
+ Драйвер      | Окружение                     | Требования
+--------------|-------------------------------|-------------------------------
+ `pdo_mysql`  | Shared hosting / обычный PHP  | `ext-pdo_mysql`
+ `ffi_mysql`  | KPHP compiled binary          | `ext-ffi` + `libmysqlclient`
 
-See [drivers.md](./drivers.md) for full driver documentation.
-
+Подробная документация по драйверам — в [drivers.md](./drivers.md).
