@@ -66,8 +66,8 @@ final class ConnectionFactory
         throw new ConnectionException(
             sprintf(
                 'Unknown driver "%s". Supported drivers: pdo_mysql, ffi_mysql.',
-                $driver,
-            ),
+                $driver
+            )
         );
     }
 

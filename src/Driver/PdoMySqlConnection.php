@@ -42,7 +42,7 @@ final class PdoMySqlConnection implements ConnectionInterface
             throw new ConnectionException(
                 'Failed to connect to database: ' . $e->getMessage(),
                 (int) $e->getCode(),
-                $e,
+                $e
             );
         }
     }
@@ -63,7 +63,7 @@ final class PdoMySqlConnection implements ConnectionInterface
             throw new QueryException(
                 'Query failed: ' . $e->getMessage(),
                 (int) $e->getCode(),
-                $e,
+                $e
             );
         }
     }
@@ -84,7 +84,7 @@ final class PdoMySqlConnection implements ConnectionInterface
             throw new QueryException(
                 'Execute failed: ' . $e->getMessage(),
                 (int) $e->getCode(),
-                $e,
+                $e
             );
         }
     }
